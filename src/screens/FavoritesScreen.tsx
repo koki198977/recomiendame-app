@@ -1,4 +1,4 @@
-import React, { useEffect, useState } from 'react';
+import React, { useCallback, useState } from 'react';
 import {
   View,
   Text,
@@ -12,6 +12,7 @@ import axios from 'axios';
 import AsyncStorage from '@react-native-async-storage/async-storage';
 import Toast from 'react-native-toast-message';
 import { API_URL } from '@env';
+import { useFocusEffect } from '@react-navigation/native';
 
 export default function FavoritesScreen() {
   const [favorites, setFavorites] = useState<any[]>([]);
@@ -20,12 +21,12 @@ export default function FavoritesScreen() {
   const [loading, setLoading] = useState(true);
 
   const fetchFavorites = async () => {
+    setLoading(true);
     try {
       const token = await AsyncStorage.getItem('token');
       const res = await axios.get(`${API_URL}/favorites?take=10`, {
         headers: { Authorization: `Bearer ${token}` },
       });
-
       setFavorites(res.data.favorites.items || []);
     } catch (e) {
       console.error('Error cargando favoritos', e);
@@ -79,9 +80,11 @@ export default function FavoritesScreen() {
     }
   };
 
-  useEffect(() => {
-    fetchFavorites();
-  }, []);
+  useFocusEffect(
+    useCallback(() => {
+      fetchFavorites();
+    }, [])
+  );
 
   if (loading) {
     return (
@@ -90,6 +93,9 @@ export default function FavoritesScreen() {
       </View>
     );
   }
+
+  const isSearching = searchResults.length > 0;
+  const data = isSearching ? searchResults : favorites;
 
   return (
     <View className="flex-1 bg-black px-4 pt-4">
@@ -107,60 +113,38 @@ export default function FavoritesScreen() {
         className="bg-zinc-800 text-white px-4 py-2 rounded-lg mb-4"
       />
 
-      {searchResults.length > 0 ? (
-        <FlatList
-          data={searchResults}
-          keyExtractor={(item) => item.id.toString()}
-          renderItem={({ item }) => (
-            <View className="mb-4">
-              {item.posterUrl ? (
-                <Image
-                  source={{ uri: item.posterUrl }}
-                  className="w-full h-56 rounded-xl mb-2"
-                  resizeMode="cover"
-                />
-              ) : (
-                <View className="w-full h-56 rounded-xl mb-2 bg-zinc-700 justify-center items-center">
-                  <Text className="text-white text-sm text-center px-2">Póster no disponible</Text>
-                </View>
-              )}
-              <View className="flex-row justify-between items-center">
-                <Text className="text-white font-semibold">{item.title}</Text>
-                <TouchableOpacity
-                  onPress={() => handleAddFavorite(item.id, item.mediaType, item.title)}
-                  className="bg-purple-600 px-3 py-1 rounded-full"
-                >
-                  <Text className="text-white text-sm">+ Favorito</Text>
-                </TouchableOpacity>
+      <FlatList
+        data={data}
+        keyExtractor={(item) => item.id.toString()}
+        numColumns={2}
+        columnWrapperStyle={{ justifyContent: 'space-between' }}
+        contentContainerStyle={{ paddingBottom: 100 }}
+        renderItem={({ item }) => (
+          <View className="mb-6 w-[48%]">
+            {item.posterUrl ? (
+              <Image
+                source={{ uri: item.posterUrl }}
+                className="w-full h-56 rounded-xl mb-2"
+                resizeMode="cover"
+              />
+            ) : (
+              <View className="w-full h-56 rounded-xl mb-2 bg-zinc-700 justify-center items-center">
+                <Text className="text-white text-sm text-center px-2">Póster no disponible</Text>
               </View>
-            </View>
-          )}
-        />
-      ) : (
-        <FlatList
-          data={favorites}
-          keyExtractor={(item) => item.id}
-          horizontal
-          showsHorizontalScrollIndicator={false}
-          className="mb-6"
-          renderItem={({ item }) => (
-            <View className="mr-4 w-36">
-              {item.posterUrl ? (
-                <Image
-                  source={{ uri: item.posterUrl }}
-                  className="w-full h-56 rounded-xl mb-2"
-                  resizeMode="cover"
-                />
-              ) : (
-                <View className="w-full h-56 rounded-xl mb-2 bg-zinc-700 justify-center items-center">
-                  <Text className="text-white text-sm text-center px-2">Póster no disponible</Text>
-                </View>
-              )}
-              <Text className="text-white font-semibold text-sm">{item.title}</Text>
-            </View>
-          )}
-        />
-      )}
+            )}
+            <Text className="text-white font-semibold text-sm mb-2 text-center">{item.title}</Text>
+
+            {isSearching && (
+              <TouchableOpacity
+                onPress={() => handleAddFavorite(item.id, item.mediaType, item.title)}
+                className="bg-purple-600 px-3 py-1 rounded-full self-center"
+              >
+                <Text className="text-white text-sm">+ Favorito</Text>
+              </TouchableOpacity>
+            )}
+          </View>
+        )}
+      />
     </View>
   );
 }

@@ -1,3 +1,4 @@
+// src/screens/SeenScreen.tsx
 import React, { useEffect, useState } from 'react';
 import {
   View,
@@ -7,6 +8,7 @@ import {
   ActivityIndicator,
   TextInput,
   TouchableOpacity,
+  ScrollView,
 } from 'react-native';
 import AsyncStorage from '@react-native-async-storage/async-storage';
 import axios from 'axios';
@@ -23,50 +25,130 @@ interface SeenItem {
   createdAt: string;
   posterUrl?: string;
   releaseDate?: string;
+  alreadyRated?: boolean;
+}
+
+interface RatingItem {
+  tmdbId: number;
+  rating: number;
+  comment?: string;
 }
 
 export default function SeenScreen() {
   const [seen, setSeen] = useState<SeenItem[]>([]);
+  const [ratings, setRatings] = useState<RatingItem[]>([]);
   const [loading, setLoading] = useState(true);
   const [ratingModalItem, setRatingModalItem] = useState<SeenItem | null>(null);
   const [ratingValue, setRatingValue] = useState(0);
   const [comment, setComment] = useState('');
 
-  useEffect(() => {
-    const fetchSeen = async () => {
-      try {
-        const token = await AsyncStorage.getItem('token');
-        const res = await axios.get(`${API_URL}/seen`, {
+  const fetchSeenAndRatings = async () => {
+    try {
+      const token = await AsyncStorage.getItem('token');
+      const [seenRes, ratingsRes] = await Promise.all([
+        axios.get(`${API_URL}/seen`, {
           headers: { Authorization: `Bearer ${token}` },
-        });
+        }),
+        axios.get(`${API_URL}/ratings?take=1000`, {
+          headers: { Authorization: `Bearer ${token}` },
+        }),
+      ]);
 
-        const enriched = await Promise.all(
-          res.data.items.map(async (item: SeenItem) => {
-            try {
-              const posterUrl = await getPoster(item.tmdbId, item.mediaType);
-              return { ...item, posterUrl };
-            } catch (e) {
-              console.warn(`❌ No se pudo obtener póster para ${item.title}`);
-              return { ...item };
-            }
-          })
-        );
+      const ratingMap = ratingsRes.data.ratings.items.reduce((acc: any, r: RatingItem) => {
+        acc[r.tmdbId] = r;
+        return acc;
+      }, {});
 
-        setSeen(enriched);
-      } catch (err: any) {
-        console.warn('Error al cargar items vistos:', err?.response?.data || err.message);
-        Toast.show({
-          type: 'error',
-          text1: '⚠️ Error al cargar vistos',
-          text2: 'Verifica tu conexión o vuelve a intentar',
-        });
-      } finally {
-        setLoading(false);
-      }
-    };
+      setRatings(ratingsRes.data.ratings.items);
 
-    fetchSeen();
+      const enriched = await Promise.all(
+        seenRes.data.items.map(async (item: SeenItem) => {
+          try {
+            const posterUrl = await getPoster(item.tmdbId, item.mediaType);
+            return { ...item, posterUrl, alreadyRated: !!ratingMap[item.tmdbId] };
+          } catch {
+            return { ...item, alreadyRated: !!ratingMap[item.tmdbId] };
+          }
+        })
+      );
+
+      setSeen(enriched);
+    } catch (err) {
+      console.warn('Error al cargar items vistos o ratings:', err);
+      Toast.show({
+        type: 'error',
+        text1: '⚠️ Error al cargar datos',
+        text2: 'Verifica tu conexión o vuelve a intentar',
+      });
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  useEffect(() => {
+    fetchSeenAndRatings();
   }, []);
+
+  const handleOpenModal = (item: SeenItem) => {
+    const previous = ratings.find((r) => r.tmdbId === item.tmdbId);
+    setRatingModalItem(item);
+    setRatingValue(previous?.rating ?? 0);
+    setComment(previous?.comment ?? '');
+  };
+
+  const handleSendRating = async () => {
+    if (!ratingModalItem) return;
+    try {
+      const token = await AsyncStorage.getItem('token');
+      await axios.post(
+        `${API_URL}/ratings`,
+        {
+          tmdbId: ratingModalItem.tmdbId,
+          title: ratingModalItem.title,
+          mediaType: ratingModalItem.mediaType,
+          rating: ratingValue,
+          comment,
+        },
+        {
+          headers: { Authorization: `Bearer ${token}` },
+        }
+      );
+
+      Toast.show({
+        type: 'success',
+        text1: '✅ Puntuado',
+        text2: `Gracias por calificar "${ratingModalItem.title}"`,
+      });
+
+      // ✅ Actualizamos la lista de vistos
+      setSeen((prev) =>
+        prev.map((item) =>
+          item.tmdbId === ratingModalItem.tmdbId
+            ? { ...item, alreadyRated: true }
+            : item
+        )
+      );
+
+      // ✅ Actualizamos ratings
+      setRatings((prev) => [
+        ...prev.filter((r) => r.tmdbId !== ratingModalItem.tmdbId),
+        {
+          tmdbId: ratingModalItem.tmdbId,
+          rating: ratingValue,
+          comment,
+        },
+      ]);
+
+      setRatingModalItem(null);
+    } catch (err) {
+      console.warn('Error al puntuar:', err);
+      Toast.show({
+        type: 'error',
+        text1: '❌ Error al puntuar',
+        text2: 'Intenta nuevamente',
+      });
+    }
+  };
 
   if (loading) {
     return (
@@ -86,68 +168,93 @@ export default function SeenScreen() {
         <FlatList
           data={seen}
           keyExtractor={(item) => `${item.tmdbId}-${item.createdAt}`}
+          numColumns={2}
+          columnWrapperStyle={{ justifyContent: 'space-between' }}
+          contentContainerStyle={{ paddingBottom: 100 }}
           renderItem={({ item }) => (
-            <View className="flex-row mb-4 bg-zinc-900 rounded-xl overflow-hidden">
+            <View className="mb-6 w-[48%]">
               {item.posterUrl ? (
                 <Image
                   source={{ uri: item.posterUrl }}
-                  className="w-24 h-36"
+                  className="w-full h-56 rounded-xl mb-2"
                   resizeMode="cover"
                 />
               ) : (
-                <View className="w-24 h-36 bg-zinc-700 justify-center items-center">
+                <View className="w-full h-56 bg-zinc-700 rounded-xl mb-2 justify-center items-center">
                   <Text className="text-white text-xs px-2 text-center">Sin póster</Text>
                 </View>
               )}
 
-              <View className="flex-1 p-3 justify-between">
-                <View>
-                  <Text className="text-white text-lg font-bold">{item.title}</Text>
-                  <Text className="text-zinc-400 text-sm">{item.releaseDate?.substring(0, 10)}</Text>
-                </View>
-                <View className="flex-row mt-2 gap-3">
-                  <Text className={`text-xs px-2 py-1 rounded-full ${item.mediaType === 'movie' ? 'bg-indigo-600' : 'bg-green-600'} text-white`}>
-                    {item.mediaType.toUpperCase()}
-                  </Text>
-                  <TouchableOpacity
-                    className="bg-purple-600 px-3 py-1 rounded-full"
-                    onPress={() => {
-                      setRatingModalItem(item);
-                      setRatingValue(0);
-                      setComment('');
-                    }}
-                  >
-                    <Text className="text-white text-sm">⭐ Evaluar</Text>
-                  </TouchableOpacity>
-                </View>
+              <Text className="text-white text-sm font-semibold mb-1 text-center">
+                {item.title}
+              </Text>
+
+              <View className="flex-row justify-center gap-2 mb-1">
+                <Text
+                  className={`text-xs px-2 py-0.5 rounded-full ${
+                    item.mediaType === 'movie' ? 'bg-indigo-600' : 'bg-green-600'
+                  } text-white`}
+                >
+                  {item.mediaType.toUpperCase()}
+                </Text>
               </View>
+
+              <TouchableOpacity
+                className={`px-3 py-1 rounded-full mx-auto ${
+                  item.alreadyRated ? 'bg-purple-900' : 'bg-purple-600'
+                }`}
+                onPress={() => handleOpenModal(item)}
+                disabled={item.alreadyRated}
+              >
+                <View className="flex-row items-center gap-1">
+                  <Text className="text-white text-sm">
+                    {item.alreadyRated ? '✅ Evaluado' : '⭐ Evaluar'}
+                  </Text>
+                  {item.alreadyRated && (
+                    <Text className="text-yellow-400 text-sm font-semibold">
+                      ⭐ {ratings.find((r) => r.tmdbId === item.tmdbId)?.rating}
+                    </Text>
+                  )}
+                </View>
+              </TouchableOpacity>
             </View>
           )}
         />
       )}
 
+      {/* Modal */}
       {ratingModalItem && (
-        <View className="absolute inset-0 bg-black bg-opacity-80 justify-center items-center px-6">
-          <View className="bg-white rounded-2xl w-full max-h-[80%] p-5">
-            <Text className="text-black text-xl font-bold mb-3">{ratingModalItem.title}</Text>
+        <View className="absolute inset-0 bg-black bg-opacity-80 justify-center items-center px-4">
+          <ScrollView
+            className="bg-white rounded-2xl w-full"
+            contentContainerStyle={{
+              padding: 24,
+              justifyContent: 'center',
+              alignItems: 'center',
+            }}
+            style={{ maxHeight: '85%' }}
+          >
+            <Text className="text-black text-2xl font-bold mb-4 text-center">
+              {ratingModalItem.title}
+            </Text>
 
             <StarRating
               rating={ratingValue}
               onChange={setRatingValue}
-              starSize={32}
+              starSize={36}
               color="#a855f7"
             />
 
-            <Text className="text-black mt-4 mb-1">Comentario:</Text>
+            <Text className="text-black mt-4 mb-2 w-full">Comentario:</Text>
             <TextInput
               placeholder="¿Qué te pareció?"
               value={comment}
               onChangeText={setComment}
               multiline
-              className="bg-zinc-100 rounded-lg p-3 text-black h-24"
+              className="bg-zinc-100 rounded-lg p-3 text-black w-full h-28"
             />
 
-            <View className="flex-row justify-end mt-4 gap-3">
+            <View className="flex-row justify-end w-full mt-6 gap-3">
               <TouchableOpacity
                 onPress={() => setRatingModalItem(null)}
                 className="px-4 py-2 bg-zinc-300 rounded-full"
@@ -156,43 +263,13 @@ export default function SeenScreen() {
               </TouchableOpacity>
 
               <TouchableOpacity
-                onPress={async () => {
-                  try {
-                    const token = await AsyncStorage.getItem('token');
-                    await axios.post(
-                      `${API_URL}/ratings`,
-                      {
-                        tmdbId: ratingModalItem.tmdbId,
-                        title: ratingModalItem.title,
-                        mediaType: ratingModalItem.mediaType,
-                        rating: ratingValue,
-                        comment,
-                      },
-                      {
-                        headers: { Authorization: `Bearer ${token}` },
-                      }
-                    );
-                    Toast.show({
-                      type: 'success',
-                      text1: '✅ Puntuado',
-                      text2: `Gracias por calificar "${ratingModalItem.title}"`,
-                    });
-                    setRatingModalItem(null);
-                  } catch (err: any) {
-                    console.warn('Error al puntuar:', err?.response?.data || err.message);
-                    Toast.show({
-                      type: 'error',
-                      text1: '❌ Error al puntuar',
-                      text2: 'Intenta nuevamente',
-                    });
-                  }
-                }}
+                onPress={handleSendRating}
                 className="px-4 py-2 bg-purple-600 rounded-full"
               >
                 <Text className="text-white font-semibold">Enviar</Text>
               </TouchableOpacity>
             </View>
-          </View>
+          </ScrollView>
         </View>
       )}
     </View>

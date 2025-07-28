@@ -3,8 +3,10 @@ import { NavigationContainer } from '@react-navigation/native';
 import { createNativeStackNavigator } from '@react-navigation/native-stack';
 import { createBottomTabNavigator } from '@react-navigation/bottom-tabs';
 import AsyncStorage from '@react-native-async-storage/async-storage';
-import { ActivityIndicator, View, Image } from 'react-native';
+import { ActivityIndicator, View, Image, Text } from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
+import axios from 'axios';
+import Toast from 'react-native-toast-message';
 
 import LoginScreen from './src/screens/LoginScreen';
 import HomeScreen from './src/screens/HomeScreen';
@@ -12,10 +14,7 @@ import FavoritesScreen from './src/screens/FavoritesScreen';
 import SeenScreen from './src/screens/SeenScreen';
 import ProfileScreen from './src/screens/ProfileScreen';
 import RecommendationsScreen from './src/screens/RecommendationsScreen';
-import { Text } from 'react-native';
-
-
-import Toast from 'react-native-toast-message';
+import { API_URL } from '@env';
 
 const Stack = createNativeStackNavigator();
 const Tab = createBottomTabNavigator();
@@ -28,13 +27,12 @@ function LogoTitle() {
         style={{ width: 64, height: 64 }}
         resizeMode="contain"
       />
-        <Text style={{ color: 'white', fontSize: 20, fontWeight: 'bold' }}>
+      <Text style={{ color: 'white', fontSize: 20, fontWeight: 'bold' }}>
         Recomiéndame
       </Text>
     </View>
   );
 }
-
 
 function MainTabs() {
   return (
@@ -81,17 +79,44 @@ function MainTabs() {
 }
 
 export default function App() {
-  const [initialRoute, setInitialRoute] = useState<string | null>(null);
+  const [isAuthenticated, setIsAuthenticated] = useState<boolean | null>(null);
 
   useEffect(() => {
-    const checkToken = async () => {
+    const validateToken = async () => {
       const token = await AsyncStorage.getItem('token');
-      setInitialRoute(token ? 'MainTabs' : 'Login');
+      if (!token) {
+        setIsAuthenticated(false);
+        return;
+      }
+
+      try {
+        const meRes = await axios.get(`${API_URL}/users/me`, {
+          headers: { Authorization: `Bearer ${token}` },
+        });
+
+        await AsyncStorage.setItem('userId', meRes.data.id);
+
+      setIsAuthenticated(true);
+        const res = await axios.get(`${API_URL}/dashboard/stats`, {
+          headers: { Authorization: `Bearer ${token}` },
+        });
+        if (res.status === 200) {
+          setIsAuthenticated(true);
+        } else {
+          await AsyncStorage.removeItem('token');
+          setIsAuthenticated(false);
+        }
+      } catch (err) {
+        console.warn('Token inválido, cerrando sesión...');
+        await AsyncStorage.removeItem('token');
+        setIsAuthenticated(false);
+      }
     };
-    checkToken();
+
+    validateToken();
   }, []);
 
-  if (!initialRoute) {
+  if (isAuthenticated === null) {
     return (
       <View className="flex-1 justify-center items-center bg-black">
         <ActivityIndicator color="#a855f7" size="large" />
@@ -103,12 +128,11 @@ export default function App() {
     <NavigationContainer>
       <Stack.Navigator
         screenOptions={{ headerShown: false }}
-        initialRouteName={initialRoute}
+        initialRouteName={isAuthenticated ? 'MainTabs' : 'Login'}
       >
         <Stack.Screen name="Login" component={LoginScreen} />
         <Stack.Screen name="MainTabs" component={MainTabs} />
       </Stack.Navigator>
-
       <Toast />
     </NavigationContainer>
   );

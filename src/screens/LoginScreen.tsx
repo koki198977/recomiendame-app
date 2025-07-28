@@ -16,6 +16,10 @@ export default function LoginScreen({ navigation }: any) {
       });
       const token = response.data.access_token;
       await AsyncStorage.setItem('token', token);
+      const meRes = await axios.get(`${API_URL}/users/me`, {
+        headers: { Authorization: `Bearer ${token}` },
+      });
+      await AsyncStorage.setItem('userId', meRes.data.id);
       navigation.replace('MainTabs');
 
     } catch (error) {
