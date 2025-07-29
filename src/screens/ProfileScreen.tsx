@@ -6,12 +6,12 @@ import {
   TouchableOpacity,
   ScrollView,
   ActivityIndicator,
-  Alert,
 } from 'react-native';
 import AsyncStorage from '@react-native-async-storage/async-storage';
 import axios from 'axios';
 import { API_URL } from '@env';
 import Toast from 'react-native-toast-message';
+import CustomPicker from '../components/CustomPicker';
 
 export default function ProfileScreen({ navigation }: any) {
   const [user, setUser] = useState<any>(null);
@@ -24,19 +24,30 @@ export default function ProfileScreen({ navigation }: any) {
   const [favoriteGenres, setFavoriteGenres] = useState<string[]>([]);
 
   const genres = [
-    'Action',
-    'Adventure',
-    'Animation',
-    'Comedy',
-    'Crime',
-    'Documentary',
-    'Drama',
-    'Fantasy',
-    'History',
-    'Horror',
-    'Romance',
-    'Sci-Fi',
-    'Thriller',
+    'Action', 'Adventure', 'Animation', 'Comedy', 'Crime',
+    'Documentary', 'Drama', 'Fantasy', 'History', 'Horror',
+    'Romance', 'Sci-Fi', 'Thriller',
+  ];
+
+  const countryOptions = [
+    { label: 'Chile', value: 'CL' },
+    { label: 'Argentina', value: 'AR' },
+    { label: 'Perú', value: 'PE' },
+    { label: 'México', value: 'MX' },
+    { label: 'Colombia', value: 'CO' },
+    { label: 'España', value: 'ES' },
+    { label: 'Estados Unidos', value: 'US' },
+    { label: 'Brasil', value: 'BR' },
+    { label: 'Uruguay', value: 'UY' },
+    { label: 'Paraguay', value: 'PY' },
+  ];
+
+  const languageOptions = [
+    { label: 'Español', value: 'es' },
+    { label: 'Inglés', value: 'en' },
+    { label: 'Portugués', value: 'pt' },
+    { label: 'Francés', value: 'fr' },
+    { label: 'Alemán', value: 'de' },
   ];
 
   useEffect(() => {
@@ -44,7 +55,7 @@ export default function ProfileScreen({ navigation }: any) {
       try {
         const token = await AsyncStorage.getItem('token');
         const userId = await AsyncStorage.getItem('userId');
-  
+
         const res = await axios.get(`${API_URL}/users/${userId}`, {
           headers: { Authorization: `Bearer ${token}` },
         });
@@ -147,18 +158,18 @@ export default function ProfileScreen({ navigation }: any) {
         onChangeText={setBirthDate}
       />
 
-      <Text className="text-white mb-1">País</Text>
-      <TextInput
-        className="bg-zinc-800 text-white rounded-xl px-4 py-3 mb-4"
+      <CustomPicker
+        label="País"
         value={country}
-        onChangeText={setCountry}
+        onChange={setCountry}
+        options={countryOptions}
       />
 
-      <Text className="text-white mb-1">Idioma</Text>
-      <TextInput
-        className="bg-zinc-800 text-white rounded-xl px-4 py-3 mb-4"
+      <CustomPicker
+        label="Idioma"
         value={language}
-        onChangeText={setLanguage}
+        onChange={setLanguage}
+        options={languageOptions}
       />
 
       <Text className="text-white mb-2">Géneros favoritos</Text>
