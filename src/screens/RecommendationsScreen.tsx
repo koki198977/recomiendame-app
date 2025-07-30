@@ -7,16 +7,15 @@ import {
   TouchableOpacity,
   ActivityIndicator,
   ScrollView,
-  Alert,
+  Linking,
 } from 'react-native';
 import AsyncStorage from '@react-native-async-storage/async-storage';
 import axios from 'axios';
 import { API_URL } from '@env';
 import Toast from 'react-native-toast-message';
 
-
 interface Recommendation {
-  id: string;        
+  id: string;
   tmdbId: number;
   title: string;
   posterUrl: string;
@@ -28,8 +27,9 @@ interface Recommendation {
   popularity?: number;
   seen?: boolean;
   favorite?: boolean;
+  platforms?: string[];
+  trailerUrl?: string;
 }
-
 
 export default function RecommendationsScreen() {
   const [recommendations, setRecommendations] = useState<Recommendation[]>([]);
@@ -37,30 +37,35 @@ export default function RecommendationsScreen() {
   const [selectedItem, setSelectedItem] = useState<Recommendation | null>(null);
 
   useEffect(() => {
-    const fetchRecommendations = async () => {
+    const fetchData = async () => {
       try {
         const token = await AsyncStorage.getItem('token');
-        const res = await axios.get(`${API_URL}/recommendations`, {
-          headers: { Authorization: `Bearer ${token}` },
-        });
-        const data: Recommendation[] = res.data.recommendations || [];
+        const headers = { Authorization: `Bearer ${token}` };
 
-        // Inicializa flags para UI
-        const enriched = data.map((item) => ({
+        const [recsRes, favsRes, seenRes] = await Promise.all([
+          axios.post(`${API_URL}/recommendations`, {}, { headers }),
+          axios.get(`${API_URL}/favorites`, { headers }),
+          axios.get(`${API_URL}/seen`, { headers }),
+        ]);
+
+        const favTmdbIds = new Set((favsRes.data?.items || []).map((item: any) => item.tmdbId));
+        const seenTmdbIds = new Set((seenRes.data?.items || []).map((item: any) => item.tmdbId));
+
+        const enriched = (recsRes.data.recommendations || []).map((item: Recommendation) => ({
           ...item,
-          seen: false,
-          favorite: false,
+          favorite: favTmdbIds.has(item.tmdbId),
+          seen: seenTmdbIds.has(item.tmdbId),
         }));
 
         setRecommendations(enriched);
       } catch (err) {
-        console.warn('Error al cargar recomendaciones:', err);
+        console.warn('Error al cargar datos:', err);
       } finally {
         setLoading(false);
       }
     };
 
-    fetchRecommendations();
+    fetchData();
   }, []);
 
   const markAsSeen = async (item: Recommendation) => {
@@ -68,71 +73,36 @@ export default function RecommendationsScreen() {
       const token = await AsyncStorage.getItem('token');
       await axios.post(
         `${API_URL}/seen`,
-        {
-          tmdbId: item.tmdbId,
-          title: item.title,
-          mediaType: item.mediaType,
-        },
-        {
-          headers: { Authorization: `Bearer ${token}` },
-        }
+        { tmdbId: item.tmdbId, mediaType: item.mediaType },
+        { headers: { Authorization: `Bearer ${token}` } }
       );
-
       setRecommendations((prev) =>
-        prev.map((r) =>
-          r.id === item.id ? { ...r, seen: true } : r
-        )
+        prev.map((r) => (r.id === item.id ? { ...r, seen: true } : r))
       );
-
-      Toast.show({
-        type: 'success',
-        text1: '✅ Marcado como visto',
-        text2: item.title,
-      });
+      Toast.show({ type: 'success', text1: '✅ Marcado como visto', text2: item.title });
     } catch (error) {
       console.warn('Error al marcar como visto:', error);
-      Toast.show({
-        type: 'error',
-        text1: '⚠️ Error al marcar como visto',
-        text2: 'Intenta nuevamente.',
-      });
+      Toast.show({ type: 'error', text1: '⚠️ Error al marcar como visto', text2: 'Intenta nuevamente.' });
     }
   };
 
-    const markAsFavorite = async (item: Recommendation) => {
+  const markAsFavorite = async (item: Recommendation) => {
     try {
       const token = await AsyncStorage.getItem('token');
       await axios.post(
         `${API_URL}/favorites`,
-        {
-          tmdbId: item.tmdbId,
-          title: item.title,
-          mediaType: item.mediaType,
-        },
-        {
-          headers: { Authorization: `Bearer ${token}` },
-        }
+        { tmdbId: item.tmdbId, title: item.title, mediaType: item.mediaType },
+        { headers: { Authorization: `Bearer ${token}` } }
       );
       setRecommendations((prev) =>
-        prev.map((r) =>
-          r.id === item.id ? { ...r, favorite: true } : r
-        )
+        prev.map((r) => (r.id === item.id ? { ...r, favorite: true } : r))
       );
-      Toast.show({
-        type: 'success',
-        text1:  '❤️ Agregado a favoritos',
-        text2: item.title,
-      });
+      Toast.show({ type: 'success', text1: '❤️ Agregado a favoritos', text2: item.title });
     } catch (error: any) {
       console.warn('Error al marcar como favorito:', error?.response?.data || error.message);
-      Toast.show({
-        type: 'error',
-        text1: '⚠️ Error No se pudo marcar como favorito',
-        text2: 'Intenta nuevamente.',
-      });
+      Toast.show({ type: 'error', text1: '⚠️ No se pudo agregar a favoritos', text2: 'Intenta nuevamente.' });
     }
   };
-
 
   if (loading) {
     return (
@@ -167,12 +137,8 @@ export default function RecommendationsScreen() {
             )}
             <View className="flex-1">
               <Text className="text-white text-lg font-semibold mb-1">{item.title}</Text>
-              <Text className="text-zinc-400 text-xs mb-2">
-                {item.releaseDate?.substring(0, 10)}
-              </Text>
-              <Text className="text-white text-sm mb-2" numberOfLines={3}>
-                {item.overview}
-              </Text>
+              <Text className="text-zinc-400 text-xs mb-2">{item.releaseDate?.substring(0, 10)}</Text>
+              <Text className="text-white text-sm mb-2" numberOfLines={3}>{item.overview}</Text>
               <View className="flex-row gap-4">
                 <TouchableOpacity
                   onPress={() => markAsSeen(item)}
@@ -198,45 +164,47 @@ export default function RecommendationsScreen() {
         )}
       />
 
-      {/* Modal */}
       {selectedItem && (
         <View className="absolute inset-0 bg-black bg-opacity-80 justify-center items-center px-6">
-          <View
-            className="bg-white rounded-2xl w-full"
-            style={{ maxHeight: '80%' }}
-          >
+          <View className="bg-white rounded-2xl w-full" style={{ maxHeight: '80%' }}>
             <ScrollView
-              contentContainerStyle={{
-                padding: 20,
-                flexGrow: 1,
-                justifyContent: 'space-between',
-              }}
+              contentContainerStyle={{ padding: 20, flexGrow: 1, justifyContent: 'space-between' }}
               showsVerticalScrollIndicator={false}
             >
               <Text className="text-xl font-bold mb-2 text-black">{selectedItem.title}</Text>
-
               <Text className="text-gray-800 mb-4 text-sm">{selectedItem.overview}</Text>
-
               <View className="flex-row justify-around items-center mb-4">
                 <View className="items-center">
                   <Text className="text-gray-600 text-xs">⭐ Votos</Text>
-                  <Text className="text-yellow-600 font-bold text-base">
-                    {selectedItem.voteAverage}
-                  </Text>
+                  <Text className="text-yellow-600 font-bold text-base">{selectedItem.voteAverage}</Text>
                 </View>
                 <View className="items-center">
                   <Text className="text-gray-600 text-xs">🔥 Popularidad</Text>
-                  <Text className="text-pink-500 font-bold text-base">
-                    {(selectedItem.popularity ?? '-') as any}
-                  </Text>
+                  <Text className="text-pink-500 font-bold text-base">{selectedItem.popularity ?? '-'}</Text>
                 </View>
                 <View className="items-center">
                   <Text className="text-gray-600 text-xs">🎬 Tipo</Text>
-                  <Text className="text-green-600 font-bold text-base">
-                    {selectedItem.mediaType.toUpperCase()}
-                  </Text>
+                  <Text className="text-green-600 font-bold text-base">{selectedItem.mediaType.toUpperCase()}</Text>
                 </View>
               </View>
+
+              {Array.isArray(selectedItem.platforms) && selectedItem.platforms.length > 0 && (
+                <View className="mb-4">
+                  <Text className="text-black font-semibold mb-1">Disponible en:</Text>
+                  {selectedItem.platforms.map((platform) => (
+                    <Text key={platform} className="text-zinc-700 text-sm">• {platform}</Text>
+                  ))}
+                </View>
+              )}
+
+              {selectedItem.trailerUrl && (
+                <TouchableOpacity
+                  onPress={() => Linking.openURL(selectedItem.trailerUrl!)}
+                  className="bg-rose-600 py-2 rounded-full mb-4"
+                >
+                  <Text className="text-white text-center font-semibold">▶️ Ver tráiler</Text>
+                </TouchableOpacity>
+              )}
 
               <TouchableOpacity
                 onPress={() => setSelectedItem(null)}

@@ -6,12 +6,16 @@ import {
   ActivityIndicator,
   Image,
   FlatList,
+  TouchableOpacity,
+  Linking,
 } from 'react-native';
 import AsyncStorage from '@react-native-async-storage/async-storage';
 import axios from 'axios';
 import Toast from 'react-native-toast-message';
 import { API_URL } from '@env';
+import { FontAwesome, MaterialIcons, Entypo } from '@expo/vector-icons';
 
+// Tipado de recomendaciones
 type Recommendation = {
   title: string;
   tmdbId: number;
@@ -19,6 +23,23 @@ type Recommendation = {
   createdAt: string;
   mediaType: 'movie' | 'tv';
   posterUrl: string;
+  trailerUrl?: string | null;
+  platforms?: string[];
+};
+
+// Íconos locales de plataformas
+const platformIcons: Record<string, any> = {
+  'Netflix': require('../../assets/platforms/netflix.png'),
+  'Disney Plus': require('../../assets/platforms/disneyplus.png'),
+  'Amazon Prime Video': require('../../assets/platforms/primevideo.png'),
+  'HBO Max': require('../../assets/platforms/hbomax.png'),
+  'Apple TV+': require('../../assets/platforms/appletv.png'),
+  'Apple TV Plus Amazon Channel': require('../../assets/platforms/appletv.png'),
+  'YouTube': require('../../assets/platforms/youtube.png'),
+  'MovistarTV': require('../../assets/platforms/movistarplay.png'),
+  'Paramount Plus': require('../../assets/platforms/paramountplus.png'),
+  'Pluto TV': require('../../assets/platforms/plutotv.png'),
+  'Universal+ Amazon Channel': require('../../assets/platforms/universalplus.png'),
 };
 
 export default function HomeScreen() {
@@ -34,7 +55,6 @@ export default function HomeScreen() {
         });
         setStats(response.data.stats);
       } catch (error: any) {
-        console.error('Error al cargar stats:', error);
         Toast.show({
           type: 'error',
           text1: '❌ Error al cargar estadísticas',
@@ -65,26 +85,32 @@ export default function HomeScreen() {
 
       {stats ? (
         <>
-          <View className="bg-zinc-900 p-4 rounded-xl mb-4">
-            <Text className="text-white">🎬 Vistos: {stats.seenTotal}</Text>
-            <Text className="text-white">⭐ Favoritos: {stats.favoriteTotal}</Text>
-            <Text className="text-white">📝 Puntuaciones: {stats.ratingsTotal}</Text>
-            <Text className="text-white">📈 Promedio: {stats.averageRating}</Text>
+          {/* Estadísticas */}
+          <View className="bg-zinc-900 p-4 rounded-xl mb-4 flex-row justify-between items-center">
+            <View>
+              <View className="flex-row items-center mb-2">
+                <MaterialIcons name="insights" size={20} color="#9f43e3" />
+                <Text className="text-white ml-2">Vistos: {stats.seenTotal}</Text>
+              </View>
+              <View className="flex-row items-center mb-2">
+                <FontAwesome name="star" size={20} color="gold" />
+                <Text className="text-white ml-2">Favoritos: {stats.favoriteTotal}</Text>
+              </View>
+              <View className="flex-row items-center">
+                <Entypo name="video" size={20} color="#61dafb" />
+                <Text className="text-white ml-2">Puntuaciones: {stats.ratingsTotal}</Text>
+              </View>
+            </View>
+            <View className="items-center">
+              <Text className="text-white text-2xl font-bold">{stats.averageRating ?? '-'}</Text>
+              <Text className="text-zinc-400 text-sm">Promedio</Text>
+            </View>
           </View>
 
-          {stats?.breakdownByType &&
-            Object.entries(stats.breakdownByType).map(([type, breakdown]: any) => (
-              <View key={type} className="bg-zinc-800 p-3 rounded-lg mb-2">
-                <Text className="text-white capitalize font-bold">{type}</Text>
-                <Text className="text-white">Vistos: {breakdown.seen}</Text>
-                <Text className="text-white">Favoritos: {breakdown.favorites}</Text>
-                <Text className="text-white">Puntuaciones: {breakdown.ratings}</Text>
-              </View>
-            ))}
-
+          {/* Géneros favoritos */}
           {stats?.favoriteGenres?.length > 0 && (
             <>
-              <Text className="text-white text-xl font-semibold mt-4 mb-2">🎭 Géneros favoritos</Text>
+              <Text className="text-white text-xl font-semibold mb-2">🎭 Géneros favoritos</Text>
               <View className="flex-row flex-wrap gap-2 mb-4">
                 {stats.favoriteGenres.map((genre: string) => (
                   <Text
@@ -98,6 +124,7 @@ export default function HomeScreen() {
             </>
           )}
 
+          {/* Recomendaciones */}
           {stats?.recentRecommendations?.length > 0 && (
             <>
               <Text className="text-white text-xl font-semibold mb-2">🤖 Recomendaciones recientes</Text>
@@ -114,10 +141,45 @@ export default function HomeScreen() {
                       className="w-full h-60 rounded-xl mb-2"
                       resizeMode="cover"
                     />
-                    <Text className="text-white font-bold text-sm">{item.title}</Text>
-                    <Text className="text-zinc-400 text-xs">
-                      {new Date(item.createdAt).toLocaleDateString()}
-                    </Text>
+                    <Text className="text-white font-bold text-sm mb-1">{item.title}</Text>
+
+                    {/* Trailer */}
+                    {item.trailerUrl && (
+                      <TouchableOpacity
+                        onPress={() => Linking.openURL(item.trailerUrl!)}
+                        className="mb-1"
+                      >
+                        <Text className="text-blue-400 text-xs">▶ Ver trailer</Text>
+                      </TouchableOpacity>
+                    )}
+
+                    {/* Plataformas */}
+                    <View className="flex-row flex-wrap gap-2 items-center">
+                      {item.platforms?.map((platform) => {
+                        const icon = platformIcons[platform];
+                        return icon ? (
+                          <View
+                            key={platform}
+                            className="bg-white rounded-md border border-zinc-600 mr-1 mb-1 p-1"
+                            style={{ width: 37, height: 37, justifyContent: 'center', alignItems: 'center' }}
+                          >
+                            <Image
+                              source={icon}
+                              style={{ width: 28, height: 28 }}
+                              resizeMode="contain"
+                            />
+                          </View>
+                        ) : (
+                          <Text
+                            key={platform}
+                            className="text-zinc-400 text-xs border border-zinc-500 rounded px-1"
+                          >
+                            {platform}
+                          </Text>
+                        );
+                      })}
+                    </View>
+
                   </View>
                 )}
               />
