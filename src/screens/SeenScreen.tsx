@@ -9,6 +9,7 @@ import {
   TouchableOpacity,
   ScrollView,
   RefreshControl,
+  Modal,
 } from 'react-native';
 import AsyncStorage from '@react-native-async-storage/async-storage';
 import axios from 'axios';
@@ -54,6 +55,8 @@ export default function SeenScreen() {
   const [hasNextPage, setHasNextPage] = useState(true);
   const [loadingMore, setLoadingMore] = useState(false);
   const [searchQuery, setSearchQuery] = useState('');
+
+  const [confirmDeleteItem, setConfirmDeleteItem] = useState<SeenItem | null>(null);
 
   const fetchSeenAndRatings = async (reset = false) => {
     if (reset) {
@@ -164,6 +167,65 @@ export default function SeenScreen() {
     }
   };
 
+  const handleRemoveSeen = async (tmdbId: number) => {
+    try {
+      const token = await AsyncStorage.getItem('token');
+      await axios.delete(`${API_URL}/seen/${tmdbId}`, {
+        headers: { Authorization: `Bearer ${token}` },
+      });
+
+      setSeen((prev) => prev.filter((item) => item.tmdbId !== tmdbId));
+      setConfirmDeleteItem(null);
+
+      Toast.show({
+        type: 'success',
+        text1: '🗑️ Eliminado',
+        text2: 'Contenido eliminado de vistos.',
+      });
+    } catch (err) {
+      console.warn('Error al eliminar de vistos:', err);
+      Toast.show({
+        type: 'error',
+        text1: '❌ Error al eliminar',
+        text2: 'Intenta nuevamente',
+      });
+    }
+  };
+
+  const handleDeleteRating = async () => {
+    if (!ratingModalItem) return;
+    try {
+      const token = await AsyncStorage.getItem('token');
+      await axios.delete(`${API_URL}/ratings/${ratingModalItem.tmdbId}`, {
+        headers: { Authorization: `Bearer ${token}` },
+      });
+
+      Toast.show({
+        type: 'success',
+        text1: '🗑️ Evaluación eliminada',
+        text2: `"${ratingModalItem.tmdb?.title}" fue eliminada de tus evaluaciones.`,
+      });
+
+      setRatings((prev) => prev.filter((r) => r.tmdbId !== ratingModalItem.tmdbId));
+
+      setSeen((prev) =>
+        prev.map((item) =>
+          item.tmdbId === ratingModalItem.tmdbId ? { ...item, alreadyRated: false } : item
+        )
+      );
+
+      setRatingModalItem(null);
+    } catch (err) {
+      console.warn('Error al eliminar evaluación:', err);
+      Toast.show({
+        type: 'error',
+        text1: '❌ Error al eliminar',
+        text2: 'Intenta nuevamente',
+      });
+    }
+  };
+
+
   const filteredSeen = seen;
 
   if (loading && !seen.length) {
@@ -243,25 +305,24 @@ export default function SeenScreen() {
                   item.alreadyRated ? 'bg-purple-900' : 'bg-purple-600'
                 }`}
                 onPress={() => handleOpenModal(item)}
-                disabled={item.alreadyRated}
               >
-                <View className="flex-row items-center gap-1">
-                  <Text className="text-white text-sm">
-                    {item.alreadyRated ? '✅ Evaluado' : '⭐ Evaluar'}
-                  </Text>
-                  {item.alreadyRated && (
-                    <Text className="text-yellow-400 text-sm font-semibold">
-                      ⭐ {ratings.find((r) => r.tmdbId === item.tmdbId)?.rating}
-                    </Text>
-                  )}
-                </View>
+                <Text className="text-white text-sm">
+                  {item.alreadyRated ? '✏️ Editar evaluación' : '⭐ Evaluar'}
+                </Text>
+              </TouchableOpacity>
+
+              <TouchableOpacity
+                onPress={() => setConfirmDeleteItem(item)}
+                className="mt-2 px-3 py-1 rounded-full mx-auto bg-red-600"
+              >
+                <Text className="text-white text-sm">🗑️ Quitar de vistos</Text>
               </TouchableOpacity>
             </View>
           )}
         />
       )}
 
-      {/* Modal */}
+      {/* Modal de puntuación */}
       {ratingModalItem && (
         <View className="absolute inset-0 bg-black bg-opacity-80 justify-center items-center px-4">
           <ScrollView
@@ -293,13 +354,22 @@ export default function SeenScreen() {
               className="bg-zinc-100 rounded-lg p-3 text-black w-full h-28"
             />
 
-            <View className="flex-row justify-end w-full mt-6 gap-3">
+            <View className="flex-row justify-end w-full mt-6 gap-3 flex-wrap">
               <TouchableOpacity
                 onPress={() => setRatingModalItem(null)}
                 className="px-4 py-2 bg-zinc-300 rounded-full"
               >
                 <Text className="text-black font-semibold">Cancelar</Text>
               </TouchableOpacity>
+
+              {ratings.find((r) => r.tmdbId === ratingModalItem?.tmdbId) && (
+                <TouchableOpacity
+                  onPress={handleDeleteRating}
+                  className="px-4 py-2 bg-red-600 rounded-full"
+                >
+                  <Text className="text-white font-semibold">Eliminar</Text>
+                </TouchableOpacity>
+              )}
 
               <TouchableOpacity
                 onPress={handleSendRating}
@@ -308,8 +378,36 @@ export default function SeenScreen() {
                 <Text className="text-white font-semibold">Enviar</Text>
               </TouchableOpacity>
             </View>
+
           </ScrollView>
         </View>
+      )}
+
+      {/* Modal de confirmación para eliminar */}
+      {confirmDeleteItem && (
+        <Modal transparent animationType="fade" visible={true}>
+          <View className="flex-1 justify-center items-center bg-black bg-opacity-70 px-6">
+            <View className="bg-white rounded-2xl p-6 w-full">
+              <Text className="text-lg font-bold text-black mb-4 text-center">
+                ¿Quitar "{confirmDeleteItem.tmdb?.title}" de tus vistos?
+              </Text>
+              <View className="flex-row justify-end gap-4">
+                <TouchableOpacity
+                  onPress={() => setConfirmDeleteItem(null)}
+                  className="bg-zinc-300 px-4 py-2 rounded-full"
+                >
+                  <Text className="text-black font-semibold">Cancelar</Text>
+                </TouchableOpacity>
+                <TouchableOpacity
+                  onPress={() => handleRemoveSeen(confirmDeleteItem.tmdbId)}
+                  className="bg-red-600 px-4 py-2 rounded-full"
+                >
+                  <Text className="text-white font-semibold">Eliminar</Text>
+                </TouchableOpacity>
+              </View>
+            </View>
+          </View>
+        </Modal>
       )}
     </View>
   );

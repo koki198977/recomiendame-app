@@ -32,14 +32,17 @@ const platformIcons: Record<string, any> = {
   'Netflix': require('../../assets/platforms/netflix.png'),
   'Disney Plus': require('../../assets/platforms/disneyplus.png'),
   'Amazon Prime Video': require('../../assets/platforms/primevideo.png'),
+  'Amazon Channel': require('../../assets/platforms/primevideo.png'),
   'HBO Max': require('../../assets/platforms/hbomax.png'),
   'Apple TV+': require('../../assets/platforms/appletv.png'),
-  'Apple TV Plus Amazon Channel': require('../../assets/platforms/appletv.png'),
+  'Apple TV Channel': require('../../assets/platforms/appletv.png'),
   'YouTube': require('../../assets/platforms/youtube.png'),
   'MovistarTV': require('../../assets/platforms/movistarplay.png'),
   'Paramount Plus': require('../../assets/platforms/paramountplus.png'),
+  'Paramount +': require('../../assets/platforms/paramountplus.png'),
   'Pluto TV': require('../../assets/platforms/plutotv.png'),
   'Universal+ Amazon Channel': require('../../assets/platforms/universalplus.png'),
+  'Hulu': require('../../assets/platforms/hulu.png'),
 };
 
 export default function HomeScreen() {
