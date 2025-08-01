@@ -7,8 +7,8 @@ import {
   TextInput,
   TouchableOpacity,
   ActivityIndicator,
-  Alert,
   RefreshControl,
+  Modal,
 } from 'react-native';
 import axios from 'axios';
 import AsyncStorage from '@react-native-async-storage/async-storage';
@@ -32,6 +32,9 @@ export default function FavoritesScreen() {
   const [localSearchQuery, setLocalSearchQuery] = useState('');
   const [removingId, setRemovingId] = useState<number | null>(null);
   const [addingId, setAddingId] = useState<number | null>(null);
+
+  // Estado para modal de confirmación
+  const [confirmDeleteItem, setConfirmDeleteItem] = useState<any | null>(null);
 
   const fetchFavorites = async (search = '', page = 0, append = false) => {
     const take = 10;
@@ -62,71 +65,59 @@ export default function FavoritesScreen() {
       setHasNextPage(page + 1 < totalPages);
     } catch (e) {
       console.error('Error cargando favoritos', e);
+      Toast.show({ type: 'error', text1: 'Error cargando favoritos' });
     } finally {
-      if (!append) setLoading(false);
-      else setLoadingMore(false);
+      setLoading(false);
+      setLoadingMore(false);
       setRefreshing(false);
     }
   };
 
   const handleSearch = async () => {
     if (!searchQuery.trim()) return;
-
     setSearching(true);
     try {
       const token = await AsyncStorage.getItem('token');
       if (!token) return;
-
       const res = await axios.get(`${API_URL}/search?q=${searchQuery}`, {
         headers: { Authorization: `Bearer ${token}` },
       });
       setSearchResults(res.data.results || []);
     } catch (e) {
       console.error('Error buscando', e);
+      Toast.show({ type: 'error', text1: 'Error buscando' });
     } finally {
       setSearching(false);
     }
   };
 
   const handleAddFavorite = async (tmdbId: number, mediaType: string, title: string) => {
+    setAddingId(tmdbId);
     try {
-      setAddingId(tmdbId);
       const token = await AsyncStorage.getItem('token');
       if (!token) return;
 
       await axios.post(
         `${API_URL}/favorites`,
         { tmdbId, mediaType, title },
-        {
-          headers: { Authorization: `Bearer ${token}` },
-        }
+        { headers: { Authorization: `Bearer ${token}` } }
       );
 
-      Toast.show({
-        type: 'success',
-        text1: `Agregado a favoritos`,
-        text2: `"${title}" fue agregado correctamente 👌`,
-        visibilityTime: 2000,
-      });
-
+      Toast.show({ type: 'success', text1: 'Agregado a favoritos', text2: title });
       setSearchQuery('');
       setSearchResults([]);
       fetchFavorites(localSearchQuery, 0);
     } catch (e) {
-      console.error('Error al agregar a favoritos', e);
-      Toast.show({
-        type: 'error',
-        text1: 'Error',
-        text2: 'No se pudo agregar a favoritos 😢',
-      });
+      console.error(e);
+      Toast.show({ type: 'error', text1: 'No se pudo agregar' });
     } finally {
       setAddingId(null);
     }
   };
 
   const handleRemoveFavorite = async (tmdbId: number) => {
+    setRemovingId(tmdbId);
     try {
-      setRemovingId(tmdbId);
       const token = await AsyncStorage.getItem('token');
       if (!token) return;
 
@@ -134,20 +125,11 @@ export default function FavoritesScreen() {
         headers: { Authorization: `Bearer ${token}` },
       });
 
-      Toast.show({
-        type: 'success',
-        text1: 'Eliminado de favoritos',
-        visibilityTime: 2000,
-      });
-
+      Toast.show({ type: 'success', text1: 'Eliminado de favoritos' });
       fetchFavorites(localSearchQuery, 0);
     } catch (e) {
-      console.error('Error al eliminar favorito', e);
-      Toast.show({
-        type: 'error',
-        text1: 'Error',
-        text2: 'No se pudo eliminar de favoritos 😢',
-      });
+      console.error(e);
+      Toast.show({ type: 'error', text1: 'No se pudo eliminar' });
     } finally {
       setRemovingId(null);
     }
@@ -174,7 +156,7 @@ export default function FavoritesScreen() {
     <View className="flex-1 bg-black px-4 pt-4">
       <Text className="text-white text-2xl font-bold mb-2">⭐ Tus Favoritos</Text>
 
-      {/* 🔍 Buscar nuevos favoritos */}
+      {/* Buscar nuevos */}
       <TextInput
         value={searchQuery}
         onChangeText={(text) => {
@@ -182,12 +164,11 @@ export default function FavoritesScreen() {
           if (text.trim() === '') setSearchResults([]);
         }}
         onSubmitEditing={handleSearch}
-        placeholder="🔍 Buscar películas o series para agregar"
+        placeholder="🔍 Buscar películas o series"
         placeholderTextColor="#aaa"
         className="bg-zinc-800 text-white px-4 py-2 rounded-lg mb-4"
       />
 
-      {/* Loader búsqueda */}
       {searching && (
         <View className="mb-4 items-center">
           <ActivityIndicator size="small" color="#a855f7" />
@@ -195,7 +176,7 @@ export default function FavoritesScreen() {
         </View>
       )}
 
-      {/* 💜 Buscar dentro de favoritos */}
+      {/* Buscar dentro */}
       {!isSearching && (
         <TextInput
           value={localSearchQuery}
@@ -204,7 +185,7 @@ export default function FavoritesScreen() {
             setFavoritesPage(0);
             fetchFavorites(text, 0);
           }}
-          placeholder="📁 Buscar entre tus favoritos"
+          placeholder="📁 Buscar en favoritos"
           placeholderTextColor="#aaa"
           className="bg-zinc-800 text-white px-4 py-2 rounded-lg mb-4"
         />
@@ -224,6 +205,7 @@ export default function FavoritesScreen() {
               setFavoritesPage(0);
               fetchFavorites(localSearchQuery, 0);
             }}
+            tintColor="#a855f7"
           />
         }
         onEndReachedThreshold={0.5}
@@ -258,7 +240,7 @@ export default function FavoritesScreen() {
                 />
               ) : (
                 <View className="w-full h-56 rounded-xl mb-2 bg-zinc-700 justify-center items-center">
-                  <Text className="text-white text-sm text-center px-2">Póster no disponible</Text>
+                  <Text className="text-white text-sm text-center px-2">Sin póster</Text>
                 </View>
               )}
 
@@ -275,29 +257,13 @@ export default function FavoritesScreen() {
                   {isAdding ? (
                     <ActivityIndicator size="small" color="white" />
                   ) : (
-                    <>
-                      <Feather name="star" size={16} color="white" />
-                      <Text className="text-white text-sm">+ Favorito</Text>
-                    </>
+                    <><Feather name="star" size={16} color="white" /><Text className="text-white text-sm">+ Favorito</Text></>
                   )}
                 </TouchableOpacity>
               ) : (
                 <TouchableOpacity
                   disabled={isRemoving}
-                  onPress={() =>
-                    Alert.alert(
-                      'Quitar de favoritos',
-                      `¿Quieres eliminar "${title}" de tus favoritos?`,
-                      [
-                        { text: 'Cancelar', style: 'cancel' },
-                        {
-                          text: 'Eliminar',
-                          style: 'destructive',
-                          onPress: () => handleRemoveFavorite(tmdbId),
-                        },
-                      ]
-                    )
-                  }
+                  onPress={() => setConfirmDeleteItem(item)}
                   className={`px-3 py-1 rounded-full self-center flex-row items-center space-x-2 ${
                     isRemoving ? 'bg-zinc-700' : 'bg-red-600'
                   }`}
@@ -305,10 +271,7 @@ export default function FavoritesScreen() {
                   {isRemoving ? (
                     <ActivityIndicator size="small" color="white" />
                   ) : (
-                    <>
-                      <Feather name="trash-2" size={16} color="white" />
-                      <Text className="text-white text-sm">Quitar</Text>
-                    </>
+                    <><Feather name="trash-2" size={16} color="white" /><Text className="text-white text-sm">Quitar</Text></>
                   )}
                 </TouchableOpacity>
               )}
@@ -316,6 +279,36 @@ export default function FavoritesScreen() {
           );
         }}
       />
+
+      {/* Modal de confirmación */}
+      {confirmDeleteItem && (
+        <Modal transparent animationType="fade" visible>
+          <View className="flex-1 justify-center items-center bg-black bg-opacity-70 px-6">
+            <View className="bg-white rounded-2xl p-6 w-full">
+              <Text className="text-lg font-bold text-black mb-4 text-center">
+                ¿Quitar "{confirmDeleteItem.tmdb?.title || confirmDeleteItem.title}" de tus favoritos?
+              </Text>
+              <View className="flex-row justify-end gap-4">
+                <TouchableOpacity
+                  onPress={() => setConfirmDeleteItem(null)}
+                  className="bg-zinc-300 px-4 py-2 rounded-full"
+                >
+                  <Text className="text-black font-semibold">Cancelar</Text>
+                </TouchableOpacity>
+                <TouchableOpacity
+                  onPress={() => {
+                    handleRemoveFavorite(confirmDeleteItem.tmdb?.id || confirmDeleteItem.id);
+                    setConfirmDeleteItem(null);
+                  }}
+                  className="bg-red-600 px-4 py-2 rounded-full"
+                >
+                  <Text className="text-white font-semibold">Eliminar</Text>
+                </TouchableOpacity>
+              </View>
+            </View>
+          </View>
+        </Modal>
+      )}
     </View>
   );
 }
