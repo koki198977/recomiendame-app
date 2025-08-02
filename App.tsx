@@ -1,14 +1,18 @@
+// App.tsx
 import React, { useEffect, useState } from 'react';
-import { NavigationContainer } from '@react-navigation/native';
-import { createNativeStackNavigator } from '@react-navigation/native-stack';
-import { createBottomTabNavigator } from '@react-navigation/bottom-tabs';
+import { View, ActivityIndicator, Image, Text } from 'react-native';
 import AsyncStorage from '@react-native-async-storage/async-storage';
-import { ActivityIndicator, View, Image, Text } from 'react-native';
-import { Ionicons } from '@expo/vector-icons';
 import axios from 'axios';
 import Toast from 'react-native-toast-message';
 
+import { NavigationContainer } from '@react-navigation/native';
+import { createNativeStackNavigator } from '@react-navigation/native-stack';
+import { createBottomTabNavigator } from '@react-navigation/bottom-tabs';
+import { Ionicons } from '@expo/vector-icons';
+
 import LoginScreen from './src/screens/LoginScreen';
+import RegisterScreen from './src/screens/RegisterScreen';
+import ForgotPasswordScreen from './src/screens/ForgotPasswordScreen';
 import HomeScreen from './src/screens/HomeScreen';
 import FavoritesScreen from './src/screens/FavoritesScreen';
 import SeenScreen from './src/screens/SeenScreen';
@@ -17,19 +21,13 @@ import RecommendationsScreen from './src/screens/RecommendationsScreen';
 import { API_URL } from '@env';
 
 const Stack = createNativeStackNavigator();
-const Tab = createBottomTabNavigator();
+const Tab   = createBottomTabNavigator();
 
 function LogoTitle() {
   return (
     <View style={{ flexDirection: 'row', alignItems: 'center', gap: 8 }}>
-      <Image
-        source={require('./assets/logo.png')}
-        style={{ width: 64, height: 64 }}
-        resizeMode="contain"
-      />
-      <Text style={{ color: 'white', fontSize: 20, fontWeight: 'bold' }}>
-        Recomiéndame
-      </Text>
+      <Image source={require('./assets/logo.png')} style={{ width: 64, height: 64 }} resizeMode="contain" />
+      <Text style={{ color: 'white', fontSize: 20, fontWeight: 'bold' }}>Recomiéndame</Text>
     </View>
   );
 }
@@ -47,23 +45,12 @@ function MainTabs() {
         tabBarIcon: ({ color, size }) => {
           let iconName: any;
           switch (route.name) {
-            case 'Home':
-              iconName = 'home-outline';
-              break;
-            case 'Seen':
-              iconName = 'eye-outline';
-              break;
-            case 'Favorites':
-              iconName = 'star-outline';
-              break;
-            case 'Profile':
-              iconName = 'person-outline';
-              break;
-            case 'Recommendations':
-              iconName = 'sparkles-outline';
-              break;
-            default:
-              iconName = 'ellipse-outline';
+            case 'Home':            iconName = 'home-outline'; break;
+            case 'Seen':            iconName = 'eye-outline'; break;
+            case 'Favorites':       iconName = 'star-outline'; break;
+            case 'Recommendations': iconName = 'sparkles-outline'; break;
+            case 'Profile':         iconName = 'person-outline'; break;
+            default:                iconName = 'ellipse-outline';
           }
           return <Ionicons name={iconName} size={size} color={color} />;
         },
@@ -82,38 +69,23 @@ export default function App() {
   const [isAuthenticated, setIsAuthenticated] = useState<boolean | null>(null);
 
   useEffect(() => {
-    const validateToken = async () => {
+    (async () => {
       const token = await AsyncStorage.getItem('token');
       if (!token) {
         setIsAuthenticated(false);
         return;
       }
-
       try {
         const meRes = await axios.get(`${API_URL}/users/me`, {
           headers: { Authorization: `Bearer ${token}` },
         });
-
         await AsyncStorage.setItem('userId', meRes.data.id);
-
-      setIsAuthenticated(true);
-        const res = await axios.get(`${API_URL}/dashboard/stats`, {
-          headers: { Authorization: `Bearer ${token}` },
-        });
-        if (res.status === 200) {
-          setIsAuthenticated(true);
-        } else {
-          await AsyncStorage.removeItem('token');
-          setIsAuthenticated(false);
-        }
-      } catch (err) {
-        console.warn('Token inválido, cerrando sesión...');
+        setIsAuthenticated(true);
+      } catch {
         await AsyncStorage.removeItem('token');
         setIsAuthenticated(false);
       }
-    };
-
-    validateToken();
+    })();
   }, []);
 
   if (isAuthenticated === null) {
@@ -131,8 +103,32 @@ export default function App() {
         initialRouteName={isAuthenticated ? 'MainTabs' : 'Login'}
       >
         <Stack.Screen name="Login" component={LoginScreen} />
+
+        <Stack.Screen
+          name="Register"
+          component={RegisterScreen}
+          options={{
+            headerShown: true,
+            headerTitle: () => <LogoTitle />,
+            headerStyle: { backgroundColor: '#0f0f0f' },
+            headerTintColor: '#fff',
+          }}
+        />
+
+        <Stack.Screen
+          name="ForgotPassword"
+          component={ForgotPasswordScreen}
+          options={{
+            headerShown: true,
+            headerTitle: () => <LogoTitle />,
+            headerStyle: { backgroundColor: '#0f0f0f' },
+            headerTintColor: '#fff',
+          }}
+        />
+
         <Stack.Screen name="MainTabs" component={MainTabs} />
       </Stack.Navigator>
+
       <Toast />
     </NavigationContainer>
   );

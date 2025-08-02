@@ -1,3 +1,4 @@
+// src/screens/ProfileScreen.tsx
 import React, { useEffect, useState } from 'react';
 import {
   View,
@@ -6,22 +7,40 @@ import {
   TouchableOpacity,
   ScrollView,
   ActivityIndicator,
+  Modal,
+  Button,
+  StyleSheet,
 } from 'react-native';
 import AsyncStorage from '@react-native-async-storage/async-storage';
 import axios from 'axios';
-import { API_URL } from '@env';
 import Toast from 'react-native-toast-message';
+import DateTimePicker, {
+  DateTimePickerEvent,
+} from '@react-native-community/datetimepicker';
 import CustomPicker from '../components/CustomPicker';
+import { API_URL } from '@env';
+
+// parsea un "YYYY-MM-DD" a Date en zona local
+const parseLocalDate = (dateStr: string): Date => {
+  const [y, m, d] = dateStr.split('-').map(Number);
+  return new Date(y, m - 1, d);
+};
 
 export default function ProfileScreen({ navigation }: any) {
   const [user, setUser] = useState<any>(null);
   const [loading, setLoading] = useState(true);
 
   const [fullName, setFullName] = useState('');
-  const [birthDate, setBirthDate] = useState('');
+  const [birthDate, setBirthDate] = useState('');       // "YYYY-MM-DD"
   const [country, setCountry] = useState('');
   const [language, setLanguage] = useState('');
   const [favoriteGenres, setFavoriteGenres] = useState<string[]>([]);
+
+  // Estado del date picker
+  const [showDatePicker, setShowDatePicker] = useState(false);
+  const [tempDate, setTempDate] = useState<Date>(
+    birthDate ? parseLocalDate(birthDate) : new Date()
+  );
 
   const genres = [
     'Action', 'Adventure', 'Animation', 'Comedy', 'Crime',
@@ -55,11 +74,9 @@ export default function ProfileScreen({ navigation }: any) {
       try {
         const token = await AsyncStorage.getItem('token');
         const userId = await AsyncStorage.getItem('userId');
-
         const res = await axios.get(`${API_URL}/users/${userId}`, {
           headers: { Authorization: `Bearer ${token}` },
         });
-
         setUser(res.data);
         setFullName(res.data.fullName || '');
         setBirthDate(res.data.birthDate?.slice(0, 10) || '');
@@ -93,12 +110,13 @@ export default function ProfileScreen({ navigation }: any) {
     try {
       const token = await AsyncStorage.getItem('token');
       const userId = await AsyncStorage.getItem('userId');
-
       await axios.put(
         `${API_URL}/users/${userId}`,
         {
           fullName,
-          birthDate: birthDate ? new Date(birthDate).toISOString() : undefined,
+          birthDate: birthDate
+            ? new Date(birthDate).toISOString()
+            : undefined,
           country,
           language,
           favoriteGenres,
@@ -107,7 +125,6 @@ export default function ProfileScreen({ navigation }: any) {
           headers: { Authorization: `Bearer ${token}` },
         }
       );
-
       Toast.show({
         type: 'success',
         text1: '✅ Perfil actualizado',
@@ -137,6 +154,7 @@ export default function ProfileScreen({ navigation }: any) {
 
   return (
     <ScrollView className="flex-1 bg-black px-6 pt-10">
+      {/* Avatar y email */}
       <View className="items-center mb-6">
         <View className="w-28 h-28 rounded-full bg-purple-600 justify-center items-center">
           <Text className="text-white text-5xl">👤</Text>
@@ -144,6 +162,7 @@ export default function ProfileScreen({ navigation }: any) {
         <Text className="text-white text-lg mt-4">{user.email}</Text>
       </View>
 
+      {/* Nombre */}
       <Text className="text-white mb-1">Nombre completo</Text>
       <TextInput
         className="bg-zinc-800 text-white rounded-xl px-4 py-3 mb-4"
@@ -151,13 +170,61 @@ export default function ProfileScreen({ navigation }: any) {
         onChangeText={setFullName}
       />
 
-      <Text className="text-white mb-1">Fecha de nacimiento (YYYY-MM-DD)</Text>
-      <TextInput
-        className="bg-zinc-800 text-white rounded-xl px-4 py-3 mb-4"
-        value={birthDate}
-        onChangeText={setBirthDate}
-      />
+      {/* Fecha de nacimiento */}
+      <Text className="text-white mb-1">Fecha de nacimiento</Text>
+      <TouchableOpacity
+        onPress={() => {
+          setTempDate(birthDate ? parseLocalDate(birthDate) : new Date());
+          setShowDatePicker(true);
+        }}
+        className="bg-zinc-800 rounded-xl px-4 py-3 mb-4"
+      >
+        <Text className="text-white">
+          {birthDate || 'Selecciona fecha de nacimiento'}
+        </Text>
+      </TouchableOpacity>
 
+      <Modal visible={showDatePicker} transparent animationType="slide">
+        <View style={styles.modalBackdrop}>
+          <View style={styles.modalContent}>
+            <DateTimePicker
+              value={tempDate}
+              mode="date"
+              display="spinner"
+              maximumDate={new Date()}
+              locale="es-ES"
+              themeVariant="light"
+              textColor="#000"
+              onChange={(
+                _event: DateTimePickerEvent,
+                selected?: Date
+              ) => {
+                if (selected) setTempDate(selected);
+              }}
+              style={{ backgroundColor: '#fff' }}
+            />
+            <View style={styles.modalButtons}>
+              <Button
+                title="Cancelar"
+                onPress={() => setShowDatePicker(false)}
+              />
+              <Button
+                title="Aceptar"
+                onPress={() => {
+                  // formateo YYYY-MM-DD en hora local
+                  const y = tempDate.getFullYear();
+                  const m = String(tempDate.getMonth() + 1).padStart(2, '0');
+                  const D = String(tempDate.getDate()).padStart(2, '0');
+                  setBirthDate(`${y}-${m}-${D}`);
+                  setShowDatePicker(false);
+                }}
+              />
+            </View>
+          </View>
+        </View>
+      </Modal>
+
+      {/* País */}
       <CustomPicker
         label="País"
         value={country}
@@ -165,6 +232,7 @@ export default function ProfileScreen({ navigation }: any) {
         options={countryOptions}
       />
 
+      {/* Idioma */}
       <CustomPicker
         label="Idioma"
         value={language}
@@ -172,6 +240,7 @@ export default function ProfileScreen({ navigation }: any) {
         options={languageOptions}
       />
 
+      {/* Géneros favoritos */}
       <Text className="text-white mb-2">Géneros favoritos</Text>
       <View className="flex-row flex-wrap gap-2 mb-6">
         {genres.map((genre) => (
@@ -189,19 +258,43 @@ export default function ProfileScreen({ navigation }: any) {
         ))}
       </View>
 
+      {/* Guardar y Cerrar sesión */}
       <TouchableOpacity
         onPress={handleSave}
         className="bg-purple-600 py-3 rounded-xl items-center mb-4"
       >
-        <Text className="text-white font-bold text-base">💾 Guardar cambios</Text>
+        <Text className="text-white font-bold text-base">
+          💾 Guardar cambios
+        </Text>
       </TouchableOpacity>
 
       <TouchableOpacity
         onPress={handleLogout}
         className="bg-red-600 py-3 rounded-xl items-center"
       >
-        <Text className="text-white font-bold text-base">🚪 Cerrar sesión</Text>
+        <Text className="text-white font-bold text-base">
+          🚪 Cerrar sesión
+        </Text>
       </TouchableOpacity>
     </ScrollView>
   );
 }
+
+const styles = StyleSheet.create({
+  modalBackdrop: {
+    flex: 1,
+    justifyContent: 'center',
+    backgroundColor: 'rgba(0,0,0,0.5)',
+  },
+  modalContent: {
+    margin: 24,
+    backgroundColor: '#fff',
+    borderRadius: 8,
+    overflow: 'hidden',
+  },
+  modalButtons: {
+    flexDirection: 'row',
+    justifyContent: 'space-around',
+    padding: 8,
+  },
+});

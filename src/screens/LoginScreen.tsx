@@ -21,7 +21,6 @@ export default function LoginScreen({ navigation }: any) {
       });
       await AsyncStorage.setItem('userId', meRes.data.id);
       navigation.replace('MainTabs');
-
     } catch (error) {
       console.error(error);
       Alert.alert('Error', 'Credenciales incorrectas');
@@ -31,7 +30,7 @@ export default function LoginScreen({ navigation }: any) {
   return (
     <View className="flex-1 bg-zinc-950 px-6 justify-center items-center">
       <Image
-        source={require('../../assets/logo.png')} // ajusta la ruta si es necesario
+        source={require('../../assets/logo.png')}
         className="w-28 h-28 mb-8"
         resizeMode="contain"
       />
@@ -46,6 +45,8 @@ export default function LoginScreen({ navigation }: any) {
           placeholderTextColor="#aaa"
           value={email}
           onChangeText={setEmail}
+          keyboardType="email-address"
+          autoCapitalize="none"
           className="bg-zinc-800 text-white rounded-xl px-4 py-3"
         />
         <TextInput
@@ -63,6 +64,16 @@ export default function LoginScreen({ navigation }: any) {
         >
           <Text className="text-white font-bold text-base">Entrar</Text>
         </TouchableOpacity>
+
+        {/* Enlaces secundaria */}
+        <View className="flex-row justify-between mt-2">
+          <TouchableOpacity onPress={() => navigation.navigate('Register')}>
+            <Text className="text-sm text-purple-400">Registrarme</Text>
+          </TouchableOpacity>
+          <TouchableOpacity onPress={() => navigation.navigate('ForgotPassword')}>
+            <Text className="text-sm text-purple-400">Olvidé mi contraseña</Text>
+          </TouchableOpacity>
+        </View>
       </View>
     </View>
   );

@@ -43,7 +43,7 @@ export default function MainTabs() {
       })}
     >
       <Tab.Screen name="Home" component={HomeScreen} />
-      <Tab.Screen name="Recommendations" component={RecommendationsScreen} /> {/* 👈 agregado */}
+      <Tab.Screen name="Recommendations" component={RecommendationsScreen} />
       <Tab.Screen name="Seen" component={SeenScreen} />
       <Tab.Screen name="Favorites" component={FavoritesScreen} />
       <Tab.Screen name="Profile" component={ProfileScreen} />
