@@ -1,14 +1,17 @@
+// src/screens/RegisterScreen.tsx
+
 import React, { useState, useRef } from 'react';
 import {
   View,
   Text,
   TextInput,
   TouchableOpacity,
-  Platform,
   ScrollView,
   StyleSheet,
   Modal,
   Button,
+  KeyboardAvoidingView,
+  Platform,
 } from 'react-native';
 import DateTimePicker, {
   DateTimePickerEvent,
@@ -27,12 +30,13 @@ export default function RegisterScreen({ navigation }: any) {
   const [showDatePicker, setShowDatePicker]   = useState(false);
   const [tempDate, setTempDate]               = useState<Date>(birthDate);
 
-  const [gender, setGender]     = useState<'M'|'F'|'O'|null>(null);
   const [country, setCountry]   = useState<string|null>(null);
   const [language, setLanguage] = useState<string|null>(null);
   const [favoriteGenres, setFavoriteGenres] = useState<string[]>([]);
+  const [favoriteMedia, setFavoriteMedia]   = useState('');
 
-  const genderRef   = useRef<RNPickerSelect>(null);
+  const [loading, setLoading] = useState(false);
+
   const countryRef  = useRef<RNPickerSelect>(null);
   const languageRef = useRef<RNPickerSelect>(null);
 
@@ -44,47 +48,47 @@ export default function RegisterScreen({ navigation }: any) {
 
   const handleRegister = async () => {
     if (password !== confirmPassword) {
-        Toast.show({ type: 'error', text1: 'Error', text2: 'Las contraseñas no coinciden' });
-        return;
+      Toast.show({ type: 'error', text1: 'Error', text2: 'Las contraseñas no coinciden' });
+      return;
     }
-    if (!gender || !country || !language) {
-        Toast.show({ type: 'error', text1: 'Error', text2: 'Completa todos los campos' });
-        return;
+    if (!country || !language) {
+      Toast.show({ type: 'error', text1: 'Error', text2: 'Completa todos los campos' });
+      return;
     }
+
+    setLoading(true);
     try {
-        await axios.post(`${API_URL}/users`, {
+      await axios.post(`${API_URL}/users`, {
         fullName,
         email,
         password,
         birthDate: birthDate.toISOString().slice(0, 10),
-        gender,
         country,
         language,
         favoriteGenres,
-        });
+        favoriteMedia,
+      });
 
-        Toast.show({
+      Toast.show({
         type: 'success',
         text1: '¡Registro exitoso!',
         text2: 'Revisa tu correo para activar tu cuenta',
-        });
-        setTimeout(() => navigation.replace('Login'), 1500);
+      });
+      setTimeout(() => navigation.replace('Login'), 1500);
     } catch (error: any) {
-        // Si la API devolvió { message: 'Email already in use' }
-        const msg =
+      const msg =
         error.response?.data?.message ??
-        // o si por alguna razón sigues usando detail
         error.response?.data?.detail ??
         'No se pudo completar el registro';
-
-        Toast.show({
+      Toast.show({
         type: 'error',
         text1: 'Error al registrar',
         text2: msg,
-        });
+      });
+    } finally {
+      setLoading(false);
     }
-    };
-
+  };
 
   const toggleGenre = (genre: string) => {
     if (favoriteGenres.includes(genre)) {
@@ -96,230 +100,203 @@ export default function RegisterScreen({ navigation }: any) {
 
   return (
     <View style={styles.container}>
-      <ScrollView
-        contentContainerStyle={styles.scroll}
-        keyboardShouldPersistTaps="handled"
+      <KeyboardAvoidingView
+        style={styles.container}
+        behavior={Platform.OS === 'ios' ? 'padding' : 'height'}
       >
-        <Text style={styles.title}>Crear cuenta</Text>
-
-        {/* Nombre completo */}
-        <TextInput
-          placeholder="Nombre completo"
-          placeholderTextColor="#666"
-          value={fullName}
-          onChangeText={setFullName}
-          style={styles.input}
-        />
-
-        {/* Correo electrónico */}
-        <TextInput
-          placeholder="Correo electrónico"
-          placeholderTextColor="#666"
-          autoCapitalize="none"
-          keyboardType="email-address"
-          value={email}
-          onChangeText={setEmail}
-          style={styles.input}
-        />
-
-        {/* Contraseña */}
-        <TextInput
-          placeholder="Contraseña"
-          placeholderTextColor="#666"
-          secureTextEntry
-          value={password}
-          onChangeText={setPassword}
-          style={styles.input}
-        />
-
-        {/* Confirmar contraseña */}
-        <TextInput
-          placeholder="Confirmar contraseña"
-          placeholderTextColor="#666"
-          secureTextEntry
-          value={confirmPassword}
-          onChangeText={setConfirmPassword}
-          style={styles.input}
-        />
-
-        {/* Fecha de nacimiento */}
-        <TouchableOpacity
-          onPress={() => {
-            setTempDate(birthDate);
-            setShowDatePicker(true);
-          }}
-          style={styles.input}
-          activeOpacity={0.8}
+        <ScrollView
+          contentContainerStyle={styles.scroll}
+          keyboardShouldPersistTaps="handled"
         >
-          <Text style={styles.inputText}>
-            Fecha de nacimiento: {birthDate.toISOString().slice(0, 10)}
-          </Text>
-        </TouchableOpacity>
+          <Text style={styles.title}>Crear cuenta</Text>
 
-        {/* Modal con spinner y botones */}
-        <Modal
-          visible={showDatePicker}
-          transparent
-          animationType="slide"
-        >
-          <View style={styles.modalBackdrop}>
-            <View style={styles.modalContent}>
-              <DateTimePicker
-                value={tempDate}
-                mode="date"
-                display="spinner"
-                maximumDate={new Date()}
-                locale="es-Es"         // fuerza Y-M-D
-                themeVariant="light"
-                textColor="#000"
-                onChange={(event: DateTimePickerEvent, selected?: Date) => {
-                  if (selected) setTempDate(selected);
-                }}
-                style={{ backgroundColor: '#fff' }}
-              />
-              <View style={styles.modalButtons}>
-                <Button
-                  title="Cancelar"
-                  onPress={() => setShowDatePicker(false)}
-                />
-                <Button
-                  title="Aceptar"
-                  onPress={() => {
-                    setBirthDate(tempDate);
-                    setShowDatePicker(false);
+          <TextInput
+            placeholder="Nombre completo"
+            placeholderTextColor="#666"
+            value={fullName}
+            onChangeText={setFullName}
+            style={styles.input}
+          />
+
+          <TextInput
+            placeholder="Correo electrónico"
+            placeholderTextColor="#666"
+            autoCapitalize="none"
+            keyboardType="email-address"
+            value={email}
+            onChangeText={setEmail}
+            style={styles.input}
+          />
+
+          <TextInput
+            placeholder="Contraseña"
+            placeholderTextColor="#666"
+            secureTextEntry
+            value={password}
+            onChangeText={setPassword}
+            style={styles.input}
+          />
+
+          <TextInput
+            placeholder="Confirmar contraseña"
+            placeholderTextColor="#666"
+            secureTextEntry
+            value={confirmPassword}
+            onChangeText={setConfirmPassword}
+            style={styles.input}
+          />
+
+          <TouchableOpacity
+            onPress={() => {
+              setTempDate(birthDate);
+              setShowDatePicker(true);
+            }}
+            style={styles.input}
+            activeOpacity={0.8}
+          >
+            <Text style={styles.inputText}>
+              Fecha de nacimiento: {birthDate.toISOString().slice(0, 10)}
+            </Text>
+          </TouchableOpacity>
+
+          <Modal visible={showDatePicker} transparent animationType="slide">
+            <View style={styles.modalBackdrop}>
+              <View style={styles.modalContent}>
+                <DateTimePicker
+                  value={tempDate}
+                  mode="date"
+                  display="spinner"
+                  maximumDate={new Date()}
+                  locale="es-ES"
+                  themeVariant="light"
+                  textColor="#000"
+                  onChange={(_: DateTimePickerEvent, selected?: Date) => {
+                    if (selected) setTempDate(selected);
                   }}
+                  style={{ backgroundColor: '#fff' }}
                 />
+                <View style={styles.modalButtons}>
+                  <Button title="Cancelar" onPress={() => setShowDatePicker(false)} />
+                  <Button
+                    title="Aceptar"
+                    onPress={() => {
+                      setBirthDate(tempDate);
+                      setShowDatePicker(false);
+                    }}
+                  />
+                </View>
               </View>
             </View>
+          </Modal>
+
+          <View style={styles.pickerWrapper}>
+            <Text style={styles.pickerLabel}>País</Text>
+            <TouchableOpacity
+              style={styles.pickerTouchable}
+              onPress={() => countryRef.current?.togglePicker()}
+            >
+              <Text style={country ? styles.pickerValue : styles.pickerPlaceholder}>
+                {country || 'Selecciona país'}
+              </Text>
+            </TouchableOpacity>
+            <RNPickerSelect
+              pickerProps={{ itemStyle: { color: '#000' } }}
+              ref={countryRef}
+              onValueChange={setCountry}
+              value={country}
+              items={[
+                { label: 'Selecciona país', value: null },
+                { label: 'Chile', value: 'CL' },
+                { label: 'México', value: 'MX' },
+                { label: 'Argentina', value: 'AR' },
+                { label: 'España', value: 'ES' },
+              ]}
+              placeholder={{}}
+              useNativeAndroidPickerStyle={false}
+              style={pickerHiddenStyles}
+            />
           </View>
-        </Modal>
 
-        {/* Género */}
-        <View style={styles.pickerWrapper}>
-          <Text style={styles.pickerLabel}>Género</Text>
-          <TouchableOpacity
-            style={styles.pickerTouchable}
-            onPress={() => genderRef.current?.togglePicker()}
-          >
-            <Text style={gender ? styles.pickerValue : styles.pickerPlaceholder}>
-              {gender
-                ? { M: 'Masculino', F: 'Femenino', O: 'Otro' }[gender]
-                : 'Selecciona género'}
-            </Text>
-          </TouchableOpacity>
-          <RNPickerSelect
-            pickerProps={{
-                itemStyle: {
-                color: '#000',
-                }
-            }}
-            ref={genderRef}
-            onValueChange={setGender}
-            value={gender}
-            items={[
-              { label: 'Selecciona género', value: null },
-              { label: 'Masculino', value: 'M' },
-              { label: 'Femenino',  value: 'F' },
-              { label: 'Otro',      value: 'O' },
-            ]}
-            placeholder={{}}
-            useNativeAndroidPickerStyle={false}
-            style={pickerHiddenStyles}
-          />
-        </View>
+          <View style={styles.pickerWrapper}>
+            <Text style={styles.pickerLabel}>Idioma</Text>
+            <TouchableOpacity
+              style={styles.pickerTouchable}
+              onPress={() => languageRef.current?.togglePicker()}
+            >
+              <Text style={language ? styles.pickerValue : styles.pickerPlaceholder}>
+                {language || 'Selecciona idioma'}
+              </Text>
+            </TouchableOpacity>
+            <RNPickerSelect
+              pickerProps={{ itemStyle: { color: '#000' } }}
+              ref={languageRef}
+              onValueChange={setLanguage}
+              value={language}
+              items={[
+                { label: 'Selecciona idioma', value: null },
+                { label: 'Español', value: 'es' },
+                { label: 'Inglés', value: 'en' },
+              ]}
+              placeholder={{}}
+              useNativeAndroidPickerStyle={false}
+              style={pickerHiddenStyles}
+            />
+          </View>
 
-        {/* País */}
-        <View style={styles.pickerWrapper}>
-          <Text style={styles.pickerLabel}>País</Text>
-          <TouchableOpacity
-            style={styles.pickerTouchable}
-            onPress={() => countryRef.current?.togglePicker()}
-          >
-            <Text style={country ? styles.pickerValue : styles.pickerPlaceholder}>
-              {country || 'Selecciona país'}
-            </Text>
-          </TouchableOpacity>
-          <RNPickerSelect
-            pickerProps={{
-                itemStyle: {
-                color: '#000',
-                }
-            }}
-            ref={countryRef}
-            onValueChange={setCountry}
-            value={country}
-            items={[
-              { label: 'Selecciona país', value: null},  
-              { label: 'Chile',     value: 'CL' },
-              { label: 'México',    value: 'MX' },
-              { label: 'Argentina', value: 'AR' },
-              { label: 'España',    value: 'ES' },
-            ]}
-            placeholder={{}}
-            useNativeAndroidPickerStyle={false}
-            style={pickerHiddenStyles}
-          />
-        </View>
-
-        {/* Idioma */}
-        <View style={styles.pickerWrapper}>
-          <Text style={styles.pickerLabel}>Idioma</Text>
-          <TouchableOpacity
-            style={styles.pickerTouchable}
-            onPress={() => languageRef.current?.togglePicker()}
-          >
-            <Text style={language ? styles.pickerValue : styles.pickerPlaceholder}>
-              {language || 'Selecciona idioma'}
-            </Text>
-          </TouchableOpacity>
-          <RNPickerSelect
-            pickerProps={{
-                itemStyle: {
-                color: '#000',
-                }
-            }}
-            ref={languageRef}
-            onValueChange={setLanguage}
-            value={language}
-            items={[
-              { label: 'Selecciona idioma', value: null},
-              { label: 'Español', value: 'es' },
-              { label: 'Inglés',  value: 'en' },
-            ]}
-            placeholder={{}}
-            useNativeAndroidPickerStyle={false}
-            style={pickerHiddenStyles}
-          />
-        </View>
-
-        {/* Géneros favoritos */}
-        <Text className="text-white mb-2">Géneros favoritos</Text>
-            <View className="flex-row flex-wrap gap-2 mb-6">
+          <Text style={styles.sectionLabel}>Géneros favoritos</Text>
+          <View style={styles.genresContainer}>
             {genres.map((genre) => (
-                <TouchableOpacity
+              <TouchableOpacity
                 key={genre}
                 onPress={() => toggleGenre(genre)}
-                className={`px-3 py-1 rounded-full border ${
+                style={[
+                  styles.genreButton,
+                  favoriteGenres.includes(genre)
+                    ? styles.genreSelected
+                    : styles.genreUnselected,
+                ]}
+              >
+                <Text
+                  style={[
+                    styles.genreText,
                     favoriteGenres.includes(genre)
-                    ? 'bg-purple-600 border-purple-500'
-                    : 'bg-zinc-800 border-zinc-600'
-                }`}
+                      ? styles.genreTextSelected
+                      : styles.genreTextUnselected,
+                  ]}
                 >
-                <Text className="text-white text-sm">{genre}</Text>
-                </TouchableOpacity>
+                  {genre}
+                </Text>
+              </TouchableOpacity>
             ))}
-            </View>
+          </View>
 
-        {/* Botón */}
-        <TouchableOpacity style={styles.button} onPress={handleRegister}>
-          <Text style={styles.buttonText}>Registrarme</Text>
-        </TouchableOpacity>
+          <Text style={styles.sectionLabel}>Tus películas o series favoritas</Text>
+          <TextInput
+            placeholder="Escribe algo sobre tus gustos..."
+            placeholderTextColor="#888"
+            value={favoriteMedia}
+            onChangeText={setFavoriteMedia}
+            style={[styles.input, styles.textarea]}
+            multiline
+            numberOfLines={4}
+          />
 
-        <TouchableOpacity onPress={() => navigation.goBack()}>
-          <Text style={styles.link}>¿Ya tienes cuenta? Inicia sesión</Text>
-        </TouchableOpacity>
-      </ScrollView>
-      <Toast />
+          <TouchableOpacity
+            style={[styles.button, loading && { opacity: 0.6 }]}
+            onPress={handleRegister}
+            disabled={loading}
+          >
+            <Text style={styles.buttonText}>
+              {loading ? 'Registrando...' : 'Registrarme'}
+            </Text>
+          </TouchableOpacity>
+
+          <TouchableOpacity onPress={() => navigation.goBack()}>
+            <Text style={styles.link}>¿Ya tienes cuenta? Inicia sesión</Text>
+          </TouchableOpacity>
+        </ScrollView>
+        <Toast />
+      </KeyboardAvoidingView>
     </View>
   );
 }
@@ -329,15 +306,24 @@ const styles = StyleSheet.create({
   scroll:           { padding: 24, paddingBottom: 80 },
   title:            { color: '#fff', fontSize: 28, fontWeight: 'bold', marginBottom: 24, textAlign: 'center' },
   input:            { backgroundColor: '#222', color: '#fff', borderRadius: 8, padding: 14, marginBottom: 16 },
+  textarea:         { height: 100, textAlignVertical: 'top' },
   inputText:        { color: '#fff' },
   pickerWrapper:    { marginBottom: 16, zIndex: 1000 },
   pickerLabel:      { color: '#ccc', marginBottom: 4 },
   pickerTouchable:  { backgroundColor: '#222', borderRadius: 8, padding: 14 },
   pickerPlaceholder:{ color: '#888' },
   pickerValue:      { color: '#000' },
-  button:           { backgroundColor: '#a855f7', borderRadius: 8, padding: 14, alignItems: 'center', marginBottom: 16 },
+  sectionLabel:     { color: '#fff', fontSize: 16, fontWeight: '600', marginBottom: 8 },
+  genresContainer:  { flexDirection: 'row', flexWrap: 'wrap', marginBottom: 24 },
+  genreButton:      { paddingVertical: 6, paddingHorizontal: 12, borderRadius: 16, borderWidth: 1, margin: 4 },
+  genreSelected:    { backgroundColor: '#a855f7', borderColor: '#9333ea' },
+  genreUnselected:  { backgroundColor: '#333', borderColor: '#555' },
+  genreText:        { fontSize: 14 },
+  genreTextSelected:{ color: '#000' },
+  genreTextUnselected:{ color: '#fff' },
+  button:           { backgroundColor: '#a855f7', borderRadius: 8, padding: 14, alignItems: 'center', marginTop: 8 },
   buttonText:       { color: '#fff', fontSize: 16, fontWeight: 'bold' },
-  link:             { color: '#a855f7', textAlign: 'center' },
+  link:             { color: '#a855f7', textAlign: 'center', marginTop: 12 },
 
   modalBackdrop:   { flex: 1, justifyContent: 'center', backgroundColor: 'rgba(0,0,0,0.5)' },
   modalContent:    { margin: 24, backgroundColor: '#fff', borderRadius: 8, overflow: 'hidden' },
