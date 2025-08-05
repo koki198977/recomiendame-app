@@ -1,28 +1,41 @@
 import React, { useState } from 'react';
-import { View, Text, TextInput, TouchableOpacity } from 'react-native';
+import {
+  View,
+  Text,
+  TextInput,
+  TouchableOpacity,
+  Keyboard,
+  ActivityIndicator,
+} from 'react-native';
 import axios from 'axios';
 import { API_URL } from '@env';
 import Toast from 'react-native-toast-message';
 
 export default function ForgotPasswordScreen({ navigation }: any) {
   const [email, setEmail] = useState('');
+  const [loading, setLoading] = useState(false);
 
   const handleSendReset = async () => {
+    // Oculta el teclado
+    Keyboard.dismiss();
+    setLoading(true);
+
     try {
       await axios.post(`${API_URL}/auth/request-password-reset`, { email });
       Toast.show({
         type: 'success',
         text1: 'Enviado',
-        text2: 'Revisa tu correo para reiniciar la contraseña'
+        text2: 'Revisa tu correo para reiniciar la contraseña',
       });
       setTimeout(() => navigation.replace('Login'), 1500);
     } catch (error: any) {
       Toast.show({
         type: 'error',
         text1: 'Error',
-        text2: error.response?.data?.detail || 'No se pudo enviar el correo'
+        text2: error.response?.data?.detail || 'No se pudo enviar el correo',
       });
-      
+    } finally {
+      setLoading(false);
     }
   };
 
@@ -41,19 +54,29 @@ export default function ForgotPasswordScreen({ navigation }: any) {
           keyboardType="email-address"
           className="bg-zinc-800 text-white rounded-xl px-4 py-3"
         />
+
         <TouchableOpacity
           onPress={handleSendReset}
-          className="bg-purple-600 rounded-xl py-3 items-center"
+          disabled={loading}
+          className={`rounded-xl py-3 items-center ${
+            loading ? 'bg-purple-400' : 'bg-purple-600'
+          }`}
         >
-          <Text className="text-white font-bold text-base">
-            Enviar enlace
-          </Text>
+          {loading ? (
+            <ActivityIndicator size="small" color="#fff" />
+          ) : (
+            <Text className="text-white font-bold text-base">
+              Enviar enlace
+            </Text>
+          )}
         </TouchableOpacity>
+
         <TouchableOpacity
           onPress={() => navigation.goBack()}
+          disabled={loading}
           className="mt-2 items-center"
         >
-          <Text className="text-purple-600">
+          <Text className={`text-purple-600 ${loading ? 'opacity-50' : ''}`}>
             Volver al inicio de sesión
           </Text>
         </TouchableOpacity>

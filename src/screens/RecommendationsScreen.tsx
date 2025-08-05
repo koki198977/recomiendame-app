@@ -1,4 +1,3 @@
-// src/screens/RecommendationsScreen.tsx
 import React, { useEffect, useState } from 'react';
 import {
   View,
@@ -69,10 +68,15 @@ export default function RecommendationsScreen() {
 
         const [recsRes, favsRes, seenRes] = await Promise.all([
           axios.post(`${API_URL}/recommendations`, {}, { headers }),
-          axios.get(`${API_URL}/favorites`, { headers }),
-          axios.get(`${API_URL}/seen`, { headers }),
+          axios.get(`${API_URL}/favorites`,        { headers }),
+          axios.get(`${API_URL}/seen`,             { headers }),
         ]);
 
+        const recArray: Recommendation[] = Array.isArray(recsRes.data)
+          ? recsRes.data
+          : recsRes.data.recommendations || [];
+
+        // 2) Extraer favoritos y vistos
         const favTmdbIds = new Set<number>(
           (favsRes.data?.items || []).map((i: any) => i.tmdbId)
         );
@@ -83,11 +87,8 @@ export default function RecommendationsScreen() {
         setFavoriteIds(favTmdbIds);
         setSeenIds(seenTmdbIds);
 
-        const enriched = enrichRecommendations(
-          recsRes.data.recommendations || [],
-          favTmdbIds,
-          seenTmdbIds
-        );
+        // 3) Enriquecer y guardar
+        const enriched = enrichRecommendations(recArray, favTmdbIds, seenTmdbIds);
         setRecommendations(enriched);
       } catch (err) {
         console.warn('Error al cargar datos:', err);
@@ -99,6 +100,7 @@ export default function RecommendationsScreen() {
 
     fetchData();
   }, []);
+
 
   const markAsSeen = async (item: Recommendation) => {
     try {
@@ -166,7 +168,10 @@ export default function RecommendationsScreen() {
         { headers: { Authorization: `Bearer ${token}` } }
       );
 
-      const newItems: Recommendation[] = res.data.recommendations || [];
+      const data = res.data;
+      const newItems: Recommendation[] = Array.isArray(data)
+        ? data
+        : data.recommendations || [];
       const existingIds = new Set(recommendations.map(r => r.tmdbId));
       const uniqueNew = newItems.filter(r => !existingIds.has(r.tmdbId));
       const enriched = enrichRecommendations(uniqueNew, favoriteIds, seenIds);
