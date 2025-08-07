@@ -43,10 +43,20 @@ export default function ProfileScreen({ navigation }: any) {
   );
 
   const genres = [
-    'Action', 'Adventure', 'Animation', 'Comedy', 'Crime',
-    'Documentary', 'Drama', 'Fantasy', 'History', 'Horror',
-    'Romance', 'Sci-Fi', 'Thriller',
-  ];
+  'Acción',
+  'Aventura',
+  'Animación',
+  'Comedia',
+  'Crimen',
+  'Documental',
+  'Drama',
+  'Fantasía',
+  'Historia',
+  'Terror',
+  'Romance',
+  'Ciencia ficción',
+  'Suspenso',
+];
 
   const countryOptions = [
     { label: 'Chile', value: 'CL' },

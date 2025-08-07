@@ -68,26 +68,24 @@ export default function RecommendationsScreen() {
 
         const [recsRes, favsRes, seenRes] = await Promise.all([
           axios.post(`${API_URL}/recommendations`, {}, { headers }),
-          axios.get(`${API_URL}/favorites`,        { headers }),
-          axios.get(`${API_URL}/seen`,             { headers }),
+          axios.get(`${API_URL}/favorites?take=1000`, { headers }),
+          axios.get(`${API_URL}/seen?take=1000`, { headers }),
         ]);
 
         const recArray: Recommendation[] = Array.isArray(recsRes.data)
           ? recsRes.data
           : recsRes.data.recommendations || [];
 
-        // 2) Extraer favoritos y vistos
+        const favItems = favsRes.data?.favorites?.items || [];
         const favTmdbIds = new Set<number>(
-          (favsRes.data?.items || []).map((i: any) => i.tmdbId)
+          favItems.map((i: any) => i.tmdbId)
         );
         const seenTmdbIds = new Set<number>(
           (seenRes.data?.items || []).map((i: any) => i.tmdbId)
         );
-
         setFavoriteIds(favTmdbIds);
         setSeenIds(seenTmdbIds);
 
-        // 3) Enriquecer y guardar
         const enriched = enrichRecommendations(recArray, favTmdbIds, seenTmdbIds);
         setRecommendations(enriched);
       } catch (err) {
@@ -101,8 +99,8 @@ export default function RecommendationsScreen() {
     fetchData();
   }, []);
 
-
   const markAsSeen = async (item: Recommendation) => {
+    if (seenIds.has(item.tmdbId)) return;
     try {
       const token = await AsyncStorage.getItem('token');
       await axios.post(
@@ -110,7 +108,11 @@ export default function RecommendationsScreen() {
         { tmdbId: item.tmdbId, mediaType: item.mediaType },
         { headers: { Authorization: `Bearer ${token}` } }
       );
-      setSeenIds(prev => new Set(prev).add(item.tmdbId));
+      setSeenIds(prev => {
+        const updated = new Set(prev);
+        updated.add(item.tmdbId);
+        return updated;
+      });
       setRecommendations(prev =>
         prev.map(r => (r.id === item.id ? { ...r, seen: true } : r))
       );
@@ -122,33 +124,37 @@ export default function RecommendationsScreen() {
   };
 
   const markAsFavorite = async (item: Recommendation) => {
-  try {
-    const token = await AsyncStorage.getItem('token');
-    await axios.post(
-      `${API_URL}/favorites`,
-      { tmdbId: item.tmdbId, title: item.title, mediaType: item.mediaType },
-      { headers: { Authorization: `Bearer ${token}` } }
-    );
+    if (favoriteIds.has(item.tmdbId)) {
+      Toast.show({ type: 'info', text1: 'Ya está en favoritos', text2: item.title });
+      return;
+    }
 
-    // 1) Actualizar el set de favoritos
-    setFavoriteIds(prev => {
-      const updated = new Set(prev);
-      updated.add(item.tmdbId);
-      return updated;
-    });
+    try {
+      const token = await AsyncStorage.getItem('token');
+      await axios.post(
+        `${API_URL}/favorites`,
+        { tmdbId: item.tmdbId, title: item.title, mediaType: item.mediaType },
+        { headers: { Authorization: `Bearer ${token}` } }
+      );
 
-    // 2) Enriquecer de nuevo la lista de recomendaciones
-    setRecommendations(prevRecs =>
-      enrichRecommendations(prevRecs, new Set(favoriteIds).add(item.tmdbId), seenIds)
-    );
+      setFavoriteIds(prev => {
+        const updated = new Set(prev);
+        updated.add(item.tmdbId);
 
-    Toast.show({ type: 'success', text1: '❤️ Agregado a favoritos', text2: item.title });
-  } catch (error) {
-    console.warn('Error al marcar favorito:', error);
-    Toast.show({ type: 'error', text1: 'Error', text2: 'No se pudo agregar a favoritos' });
-  }
-};
+        // Re-enriquecemos las recomendaciones con el set actualizado
+        setRecommendations(prevRecs =>
+          enrichRecommendations(prevRecs, updated, seenIds)
+        );
 
+        return updated;
+      });
+
+      Toast.show({ type: 'success', text1: '❤️ Agregado a favoritos', text2: item.title });
+    } catch (error) {
+      console.warn('Error al marcar favorito:', error);
+      Toast.show({ type: 'error', text1: 'Error', text2: 'No se pudo agregar a favoritos' });
+    }
+  };
 
   const generateNewRecommendations = async () => {
     if (recommendationGenerations >= 2 || isGenerating) return;
@@ -162,11 +168,9 @@ export default function RecommendationsScreen() {
       if (initialPrompt.trim()) body.feedback = initialPrompt.trim();
       if (likedItem) body.tmdbId = likedItem.tmdbId;
 
-      const res = await axios.post(
-        `${API_URL}/recommendations`,
-        body,
-        { headers: { Authorization: `Bearer ${token}` } }
-      );
+      const res = await axios.post(`${API_URL}/recommendations`, body, {
+        headers: { Authorization: `Bearer ${token}` },
+      });
 
       const data = res.data;
       const newItems: Recommendation[] = Array.isArray(data)
@@ -251,109 +255,99 @@ export default function RecommendationsScreen() {
         data={recommendations.filter(r => !dismissedIds.has(r.id))}
         keyExtractor={item => item.id}
         contentContainerStyle={{ paddingBottom: 80 }}
-        renderItem={({ item }) => (
-          <View style={{ marginBottom: 24 }}>
-            <TouchableOpacity
-              onPress={() => setSelectedItem(item)}
-              style={{ flexDirection: 'row', alignItems: 'center' }}
-            >
-              {item.posterUrl ? (
-                <Image
-                  source={{ uri: item.posterUrl }}
-                  style={{ width: 96, height: 144, borderRadius: 8, marginRight: 16 }}
-                  resizeMode="cover"
-                />
-              ) : (
-                <View
-                  style={{
-                    width: 96,
-                    height: 144,
-                    backgroundColor: '#555',
-                    borderRadius: 8,
-                    marginRight: 16,
-                    justifyContent: 'center',
-                    alignItems: 'center',
-                  }}
-                >
-                  <Text style={{ color: '#fff', fontSize: 12, textAlign: 'center' }}>
-                    Póster no disponible
+        renderItem={({ item }) => {
+          const isFav = favoriteIds.has(item.tmdbId);
+
+          return (
+            <View style={{ marginBottom: 24 }}>
+              <TouchableOpacity
+                onPress={() => setSelectedItem(item)}
+                style={{ flexDirection: 'row', alignItems: 'center' }}
+              >
+                {item.posterUrl ? (
+                  <Image
+                    source={{ uri: item.posterUrl }}
+                    style={{ width: 96, height: 144, borderRadius: 8, marginRight: 16 }}
+                    resizeMode="cover"
+                  />
+                ) : (
+                  <View
+                    style={{
+                      width: 96,
+                      height: 144,
+                      backgroundColor: '#555',
+                      borderRadius: 8,
+                      marginRight: 16,
+                      justifyContent: 'center',
+                      alignItems: 'center',
+                    }}
+                  >
+                    <Text style={{ color: '#fff', fontSize: 12, textAlign: 'center' }}>
+                      Póster no disponible
+                    </Text>
+                  </View>
+                )}
+                <View style={{ flex: 1 }}>
+                  <Text style={{ color: '#fff', fontSize: 18, fontWeight: '600', marginBottom: 4 }}>
+                    {item.title}
                   </Text>
+                  <Text style={{ color: '#aaa', fontSize: 12, marginBottom: 6 }}>
+                    {item.releaseDate?.substring(0, 10)}
+                  </Text>
+                  <Text style={{ color: '#eee', fontSize: 14 }} numberOfLines={3}>
+                    {item.overview}
+                  </Text>
+                  <View style={{ flexDirection: 'row', flexWrap: 'wrap', marginTop: 8, gap: 8 }}>
+                    <TouchableOpacity
+                      onPress={() => markAsSeen(item)}
+                      disabled={item.seen}
+                      style={{
+                        paddingHorizontal: 12,
+                        paddingVertical: 6,
+                        borderRadius: 16,
+                        backgroundColor: item.seen ? '#4c1d95' : '#7c3aed',
+                        marginRight: 8,
+                      }}
+                    >
+                      <Text style={{ color: '#fff', fontSize: 12 }}>
+                        {item.seen ? '✅ Visto' : '⭐ Visto'}
+                      </Text>
+                    </TouchableOpacity>
+
+                    <TouchableOpacity
+                      onPress={() => markAsFavorite(item)}
+                      disabled={isFav}
+                      style={{
+                        paddingHorizontal: 12,
+                        paddingVertical: 6,
+                        borderRadius: 16,
+                        backgroundColor: isFav ? '#881337' : '#ec4899',
+                        marginRight: 8,
+                      }}
+                    >
+                      <Text style={{ color: '#fff', fontSize: 12 }}>
+                        {isFav ? '❤️ Agregado' : '❤️ Favorito'}
+                      </Text>
+                    </TouchableOpacity>
+
+                    <TouchableOpacity
+                      onPress={() => setDismissedIds(prev => new Set(prev).add(item.id))}
+                      style={{
+                        paddingHorizontal: 12,
+                        paddingVertical: 6,
+                        borderRadius: 16,
+                        backgroundColor: '#444',
+                        marginRight: 8,
+                      }}
+                    >
+                      <Text style={{ color: '#fff', fontSize: 12 }}>🙈 No me interesa</Text>
+                    </TouchableOpacity>
+                  </View>
                 </View>
-              )}
-              <View style={{ flex: 1 }}>
-                <Text style={{ color: '#fff', fontSize: 18, fontWeight: '600', marginBottom: 4 }}>
-                  {item.title}
-                </Text>
-                <Text style={{ color: '#aaa', fontSize: 12, marginBottom: 6 }}>
-                  {item.releaseDate?.substring(0, 10)}
-                </Text>
-                <Text style={{ color: '#eee', fontSize: 14 }} numberOfLines={3}>
-                  {item.overview}
-                </Text>
-                <View style={{ flexDirection: 'row', flexWrap: 'wrap', marginTop: 8, gap: 8 }}>
-                  <TouchableOpacity
-                    onPress={() => markAsSeen(item)}
-                    disabled={item.seen}
-                    style={{
-                      paddingHorizontal: 12,
-                      paddingVertical: 6,
-                      borderRadius: 16,
-                      backgroundColor: item.seen ? '#4c1d95' : '#7c3aed',
-                      marginRight: 8,
-                    }}
-                  >
-                    <Text style={{ color: '#fff', fontSize: 12 }}>
-                      {item.seen ? '✅ Visto' : '⭐ Visto'}
-                    </Text>
-                  </TouchableOpacity>
-
-                  <TouchableOpacity
-                    onPress={() => markAsFavorite(item)}
-                    disabled={item.favorite}
-                    style={{
-                      paddingHorizontal: 12,
-                      paddingVertical: 6,
-                      borderRadius: 16,
-                      backgroundColor: item.favorite ? '#881337' : '#ec4899',
-                      marginRight: 8,
-                    }}
-                  >
-                    <Text style={{ color: '#fff', fontSize: 12 }}>
-                      {item.favorite ? '❤️ Agregado' : '❤️ Favorito'}
-                    </Text>
-                  </TouchableOpacity>
-
-                  <TouchableOpacity
-                    onPress={() =>
-                      setDismissedIds(prev => new Set(prev).add(item.id))
-                    }
-                    style={{
-                      paddingHorizontal: 12,
-                      paddingVertical: 6,
-                      borderRadius: 16,
-                      backgroundColor: '#444',
-                      marginRight: 8,
-                    }}
-                  >
-                    <Text style={{ color: '#fff', fontSize: 12 }}>🙈 No me interesa</Text>
-                  </TouchableOpacity>
-
-                  <TouchableOpacity
-                    onPress={() => setLikedItem(item)}
-                    style={{
-                      paddingHorizontal: 12,
-                      paddingVertical: 6,
-                      borderRadius: 16,
-                      backgroundColor: '#059669',
-                    }}
-                  >
-                    <Text style={{ color: '#fff', fontSize: 12 }}>👍 Me gustó</Text>
-                  </TouchableOpacity>
-                </View>
-              </View>
-            </TouchableOpacity>
-          </View>
-        )}
+              </TouchableOpacity>
+            </View>
+          );
+        }}
       />
 
       {selectedItem && (
@@ -424,7 +418,7 @@ export default function RecommendationsScreen() {
                     </Text>
                   ))}
                 </View>
-              )}            
+              )}
 
               {selectedItem.trailerUrl && (
                 <TouchableOpacity

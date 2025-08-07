@@ -73,8 +73,10 @@ export default function SeenScreen() {
       const skip = reset ? 0 : page * take;
 
       const [seenRes, ratingsRes] = await Promise.all([
-        axios.get(`${API_URL}/seen?take=${take}&skip=${skip}&search=${searchQuery}`,
-          { headers: { Authorization: `Bearer ${token}` } }),
+        axios.get(
+          `${API_URL}/seen?take=${take}&skip=${skip}&search=${searchQuery}`,
+          { headers: { Authorization: `Bearer ${token}` } }
+        ),
         axios.get(`${API_URL}/ratings?take=1000`, {
           headers: { Authorization: `Bearer ${token}` },
         }),
@@ -87,15 +89,26 @@ export default function SeenScreen() {
 
       setRatings(ratingsRes.data.ratings.items);
 
-      const enriched = seenRes.data.items.map((item: SeenItem) => {
-        return { ...item, alreadyRated: !!ratingMap[item.tmdbId] };
-      });
+      const enriched = seenRes.data.items.map((item: SeenItem) => ({
+        ...item,
+        alreadyRated: !!ratingMap[item.tmdbId],
+      }));
 
-      if (reset) setSeen(enriched);
-      else setSeen((prev) => [...prev, ...enriched]);
+      if (reset) {
+        setSeen(enriched);
+      } else {
+        setSeen(prev => {
+          const combined = [...prev, ...enriched];
+          const dedup = new Map<number, SeenItem>();
+          for (const it of combined) {
+            dedup.set(it.tmdbId, it);
+          }
+          return Array.from(dedup.values());
+        });
+      }
 
       setHasNextPage(seenRes.data.hasNextPage);
-      if (!reset) setPage((prev) => prev + 1);
+      if (!reset) setPage(prev => prev + 1);
     } catch (err) {
       console.warn('Error al cargar items vistos o ratings:', err);
       Toast.show({
@@ -117,7 +130,7 @@ export default function SeenScreen() {
   );
 
   const handleOpenModal = (item: SeenItem) => {
-    const previous = ratings.find((r) => r.tmdbId === item.tmdbId);
+    const previous = ratings.find(r => r.tmdbId === item.tmdbId);
     setRatingModalItem(item);
     setRatingValue(previous?.rating ?? 0);
     setComment(previous?.comment ?? '');
@@ -145,14 +158,16 @@ export default function SeenScreen() {
         text2: `Gracias por calificar "${ratingModalItem.tmdb?.title}"`,
       });
 
-      setSeen((prev) =>
-        prev.map((item) =>
-          item.tmdbId === ratingModalItem.tmdbId ? { ...item, alreadyRated: true } : item
+      setSeen(prev =>
+        prev.map(item =>
+          item.tmdbId === ratingModalItem.tmdbId
+            ? { ...item, alreadyRated: true }
+            : item
         )
       );
 
-      setRatings((prev) => [
-        ...prev.filter((r) => r.tmdbId !== ratingModalItem.tmdbId),
+      setRatings(prev => [
+        ...prev.filter(r => r.tmdbId !== ratingModalItem.tmdbId),
         { tmdbId: ratingModalItem.tmdbId, rating: ratingValue, comment },
       ]);
 
@@ -174,7 +189,7 @@ export default function SeenScreen() {
         headers: { Authorization: `Bearer ${token}` },
       });
 
-      setSeen((prev) => prev.filter((item) => item.tmdbId !== tmdbId));
+      setSeen(prev => prev.filter(item => item.tmdbId !== tmdbId));
       setConfirmDeleteItem(null);
 
       Toast.show({
@@ -206,14 +221,14 @@ export default function SeenScreen() {
         text2: `"${ratingModalItem.tmdb?.title}" fue eliminada de tus evaluaciones.`,
       });
 
-      setRatings((prev) => prev.filter((r) => r.tmdbId !== ratingModalItem.tmdbId));
-
-      setSeen((prev) =>
-        prev.map((item) =>
-          item.tmdbId === ratingModalItem.tmdbId ? { ...item, alreadyRated: false } : item
+      setRatings(prev => prev.filter(r => r.tmdbId !== ratingModalItem.tmdbId));
+      setSeen(prev =>
+        prev.map(item =>
+          item.tmdbId === ratingModalItem.tmdbId
+            ? { ...item, alreadyRated: false }
+            : item
         )
       );
-
       setRatingModalItem(null);
     } catch (err) {
       console.warn('Error al eliminar evaluación:', err);
@@ -225,9 +240,6 @@ export default function SeenScreen() {
     }
   };
 
-
-  const filteredSeen = seen;
-
   if (loading && !seen.length) {
     return (
       <View className="flex-1 justify-center items-center bg-black">
@@ -238,28 +250,38 @@ export default function SeenScreen() {
 
   return (
     <View className="flex-1 bg-black px-4 pt-10">
-      <Text className="text-white text-2xl font-bold mb-4">👁️‍🗨️ Vistos recientemente</Text>
+      <Text className="text-white text-2xl font-bold mb-4">
+        👁️‍🗨️ Vistos recientemente
+      </Text>
 
       <TextInput
         value={searchQuery}
-        onChangeText={(text) => setSearchQuery(text)}
+        onChangeText={text => setSearchQuery(text)}
         onSubmitEditing={() => fetchSeenAndRatings(true)}
         placeholder="Buscar entre tus vistos"
         placeholderTextColor="#aaa"
         className="bg-zinc-800 text-white px-4 py-2 rounded-lg mb-4"
       />
 
-      {filteredSeen.length === 0 ? (
-        <Text className="text-zinc-400 text-center mt-10">Aún no has marcado ítems como vistos.</Text>
+      {seen.length === 0 ? (
+        <Text className="text-zinc-400 text-center mt-10">
+          Aún no has marcado ítems como vistos.
+        </Text>
       ) : (
         <FlatList
-          data={filteredSeen}
-          keyExtractor={(item, index) => `${item.tmdbId}-${item.userId}-${index}`}
+          data={seen}
+          keyExtractor={(item, idx) => `${item.tmdbId}-${item.userId}-${idx}`}
           numColumns={2}
           columnWrapperStyle={{ justifyContent: 'space-between' }}
           contentContainerStyle={{ paddingBottom: 100 }}
           refreshControl={
-            <RefreshControl refreshing={refreshing} onRefresh={() => fetchSeenAndRatings(true)} />
+            <RefreshControl
+              refreshing={refreshing}
+              onRefresh={() => {
+                setRefreshing(true);
+                fetchSeenAndRatings(true);
+              }}
+            />
           }
           onEndReachedThreshold={0.5}
           onEndReached={() => {
@@ -276,13 +298,15 @@ export default function SeenScreen() {
             <View className="mb-6 w-[48%]">
               {item.tmdb?.posterUrl ? (
                 <Image
-                  source={{ uri: item.tmdb.posterUrl }}
+                  source={{ uri: item.tmdb.posterUrl }}  
                   className="w-full h-56 rounded-xl mb-2"
                   resizeMode="cover"
                 />
               ) : (
                 <View className="w-full h-56 bg-zinc-700 rounded-xl mb-2 justify-center items-center">
-                  <Text className="text-white text-xs px-2 text-center">Sin póster</Text>
+                  <Text className="text-white text-xs px-2 text-center">
+                    Sin póster
+                  </Text>
                 </View>
               )}
 
@@ -293,10 +317,12 @@ export default function SeenScreen() {
               <View className="flex-row justify-center gap-2 mb-1">
                 <Text
                   className={`text-xs px-2 py-0.5 rounded-full ${
-                    item.tmdb?.mediaType === 'movie' ? 'bg-indigo-600' : 'bg-green-600'
+                    item.tmdb?.mediaType === 'movie'
+                      ? 'bg-indigo-600'
+                      : 'bg-green-600'
                   } text-white`}
                 >
-                  {item.tmdb?.mediaType?.toUpperCase() || 'N/A'}
+                  {(item.tmdb?.mediaType || 'N/A').toUpperCase()}
                 </Text>
               </View>
 
@@ -315,7 +341,9 @@ export default function SeenScreen() {
                 onPress={() => setConfirmDeleteItem(item)}
                 className="mt-2 px-3 py-1 rounded-full mx-auto bg-red-600"
               >
-                <Text className="text-white text-sm">🗑️ Quitar de vistos</Text>
+                <Text className="text-white text-sm">
+                  🗑️ Quitar de vistos
+                </Text>
               </TouchableOpacity>
             </View>
           )}
@@ -345,7 +373,9 @@ export default function SeenScreen() {
               color="#a855f7"
             />
 
-            <Text className="text-black mt-4 mb-2 w-full">Comentario:</Text>
+            <Text className="text-black mt-4 mb-2 w-full">
+              Comentario:
+            </Text>
             <TextInput
               placeholder="¿Qué te pareció?"
               value={comment}
@@ -362,12 +392,14 @@ export default function SeenScreen() {
                 <Text className="text-black font-semibold">Cancelar</Text>
               </TouchableOpacity>
 
-              {ratings.find((r) => r.tmdbId === ratingModalItem?.tmdbId) && (
+              {ratings.find(r => r.tmdbId === ratingModalItem.tmdbId) && (
                 <TouchableOpacity
                   onPress={handleDeleteRating}
                   className="px-4 py-2 bg-red-600 rounded-full"
                 >
-                  <Text className="text-white font-semibold">Eliminar</Text>
+                  <Text className="text-white font-semibold">
+                    Eliminar
+                  </Text>
                 </TouchableOpacity>
               )}
 
@@ -378,14 +410,13 @@ export default function SeenScreen() {
                 <Text className="text-white font-semibold">Enviar</Text>
               </TouchableOpacity>
             </View>
-
           </ScrollView>
         </View>
       )}
 
       {/* Modal de confirmación para eliminar */}
       {confirmDeleteItem && (
-        <Modal transparent animationType="fade" visible={true}>
+        <Modal transparent animationType="fade" visible>
           <View className="flex-1 justify-center items-center bg-black bg-opacity-70 px-6">
             <View className="bg-white rounded-2xl p-6 w-full">
               <Text className="text-lg font-bold text-black mb-4 text-center">

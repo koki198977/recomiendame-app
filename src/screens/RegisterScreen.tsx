@@ -26,9 +26,10 @@ export default function RegisterScreen({ navigation }: any) {
   const [email, setEmail]                     = useState('');
   const [password, setPassword]               = useState('');
   const [confirmPassword, setConfirmPassword] = useState('');
-  const [birthDate, setBirthDate]             = useState<Date>(new Date());
+  const defaultDate = new Date(2000, 0, 1);
+  const [birthDate, setBirthDate]             = useState<Date>(defaultDate);
   const [showDatePicker, setShowDatePicker]   = useState(false);
-  const [tempDate, setTempDate]               = useState<Date>(birthDate);
+  const [tempDate, setTempDate]               = useState<Date>(defaultDate);
 
   const [country, setCountry]   = useState<string|null>(null);
   const [language, setLanguage] = useState<string|null>(null);
@@ -41,10 +42,20 @@ export default function RegisterScreen({ navigation }: any) {
   const languageRef = useRef<RNPickerSelect>(null);
 
   const genres = [
-    'Action', 'Adventure', 'Animation', 'Comedy', 'Crime',
-    'Documentary', 'Drama', 'Fantasy', 'History', 'Horror',
-    'Romance', 'Sci-Fi', 'Thriller',
-  ];
+  'Acción',
+  'Aventura',
+  'Animación',
+  'Comedia',
+  'Crimen',
+  'Documental',
+  'Drama',
+  'Fantasía',
+  'Historia',
+  'Terror',
+  'Romance',
+  'Ciencia ficción',
+  'Suspenso',
+];
 
   const handleRegister = async () => {
     if (password !== confirmPassword) {

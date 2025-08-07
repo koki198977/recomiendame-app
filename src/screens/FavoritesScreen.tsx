@@ -33,7 +33,6 @@ export default function FavoritesScreen() {
   const [removingId, setRemovingId] = useState<number | null>(null);
   const [addingId, setAddingId] = useState<number | null>(null);
 
-  // Estado para modal de confirmación
   const [confirmDeleteItem, setConfirmDeleteItem] = useState<any | null>(null);
 
   const fetchFavorites = async (search = '', page = 0, append = false) => {
@@ -60,7 +59,21 @@ export default function FavoritesScreen() {
       const newItems = res.data.favorites.items || [];
       const totalPages = res.data.favorites.totalPages || 1;
 
-      setFavorites((prev) => (append ? [...prev, ...newItems] : newItems));
+      if (!append) {
+        setFavorites(newItems);
+      } else {
+        // concatenar y deduplicar por tmdbId o id
+        setFavorites(prev => {
+          const combined = [...prev, ...newItems];
+          const map = new Map<number, any>();
+          for (const it of combined) {
+            const key = it.tmdb?.id ?? it.id;
+            map.set(key, it);
+          }
+          return Array.from(map.values());
+        });
+      }
+
       setFavoritesPage(page);
       setHasNextPage(page + 1 < totalPages);
     } catch (e) {
@@ -79,7 +92,7 @@ export default function FavoritesScreen() {
     try {
       const token = await AsyncStorage.getItem('token');
       if (!token) return;
-      const res = await axios.get(`${API_URL}/search?q=${searchQuery}`, {
+      const res = await axios.get(`${API_URL}/search?q=${encodeURIComponent(searchQuery)}`, {
         headers: { Authorization: `Bearer ${token}` },
       });
       setSearchResults(res.data.results || []);
@@ -156,10 +169,10 @@ export default function FavoritesScreen() {
     <View className="flex-1 bg-black px-4 pt-4">
       <Text className="text-white text-2xl font-bold mb-2">⭐ Tus Favoritos</Text>
 
-      {/* Buscar nuevos */}
+      {/* Buscar en API */}
       <TextInput
         value={searchQuery}
-        onChangeText={(text) => {
+        onChangeText={text => {
           setSearchQuery(text);
           if (text.trim() === '') setSearchResults([]);
         }}
@@ -176,11 +189,11 @@ export default function FavoritesScreen() {
         </View>
       )}
 
-      {/* Buscar dentro */}
+      {/* Buscar localmente */}
       {!isSearching && (
         <TextInput
           value={localSearchQuery}
-          onChangeText={(text) => {
+          onChangeText={text => {
             setLocalSearchQuery(text);
             setFavoritesPage(0);
             fetchFavorites(text, 0);
@@ -193,7 +206,7 @@ export default function FavoritesScreen() {
 
       <FlatList
         data={data}
-        keyExtractor={(item) => (item.tmdb?.id || item.id).toString()}
+        keyExtractor={item => ((item.tmdb?.id ?? item.id).toString())}
         numColumns={2}
         columnWrapperStyle={{ justifyContent: 'space-between' }}
         contentContainerStyle={{ paddingBottom: 100 }}
@@ -257,7 +270,10 @@ export default function FavoritesScreen() {
                   {isAdding ? (
                     <ActivityIndicator size="small" color="white" />
                   ) : (
-                    <><Feather name="star" size={16} color="white" /><Text className="text-white text-sm">+ Favorito</Text></>
+                    <>
+                      <Feather name="star" size={16} color="white" />
+                      <Text className="text-white text-sm">+ Favorito</Text>
+                    </>
                   )}
                 </TouchableOpacity>
               ) : (
@@ -271,7 +287,10 @@ export default function FavoritesScreen() {
                   {isRemoving ? (
                     <ActivityIndicator size="small" color="white" />
                   ) : (
-                    <><Feather name="trash-2" size={16} color="white" /><Text className="text-white text-sm">Quitar</Text></>
+                    <>
+                      <Feather name="trash-2" size={16} color="white" />
+                      <Text className="text-white text-sm">Quitar</Text>
+                    </>
                   )}
                 </TouchableOpacity>
               )}
