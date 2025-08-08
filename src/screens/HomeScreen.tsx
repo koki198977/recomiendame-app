@@ -1,5 +1,3 @@
-// src/screens/HomeScreen.tsx
-
 import React, { useEffect, useState, useCallback } from 'react';
 import {
   View,
@@ -27,7 +25,7 @@ import AsyncStorage from '@react-native-async-storage/async-storage';
 import axios from 'axios';
 import Toast from 'react-native-toast-message';
 import { API_URL } from '@env';
-import { FontAwesome, MaterialIcons, Entypo, Feather } from '@expo/vector-icons';
+import { FontAwesome, MaterialIcons, Entypo } from '@expo/vector-icons';
 import * as Progress from 'react-native-progress';
 import { useFocusEffect } from '@react-navigation/native';
 
@@ -52,25 +50,17 @@ const platformIcons: Record<string, any> = {
   Netflix: require('../../assets/platforms/netflix.png'),
   'Disney Plus': require('../../assets/platforms/disneyplus.png'),
   'Amazon Prime Video': require('../../assets/platforms/primevideo.png'),
-  'Amazon Channel': require('../../assets/platforms/primevideo.png'),
   'HBO Max': require('../../assets/platforms/hbomax.png'),
   'Apple TV+': require('../../assets/platforms/appletv.png'),
-  'Apple TV Channel': require('../../assets/platforms/appletv.png'),
   YouTube: require('../../assets/platforms/youtube.png'),
-  MovistarTV: require('../../assets/platforms/movistarplay.png'),
-  'Paramount Plus': require('../../assets/platforms/paramountplus.png'),
-  'Paramount +': require('../../assets/platforms/paramountplus.png'),
-  'Pluto TV': require('../../assets/platforms/plutotv.png'),
-  'Universal+ Amazon Channel': require('../../assets/platforms/universalplus.png'),
   Hulu: require('../../assets/platforms/hulu.png'),
+  // ...otros
 };
 
 export default function HomeScreen() {
   const [stats, setStats] = useState<any>(null);
   const [loading, setLoading] = useState<boolean>(true);
   const [refreshing, setRefreshing] = useState<boolean>(false);
-
-  // Para el popup de detalle:
   const [selectedItem, setSelectedItem] = useState<Recommendation | null>(null);
 
   const fetchStats = async () => {
@@ -131,49 +121,43 @@ export default function HomeScreen() {
         {stats ? (
           <>
             {/* --- Estadísticas --- */}
-            <Card style={{ backgroundColor: '#1f1f1f', marginBottom: 24 }}>
-              <Card.Content style={{ padding: 20 }}>
-                <View style={{ flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center' }}>
-                  <View>
-                    <View style={{ flexDirection: 'row', alignItems: 'center', marginBottom: 12 }}>
-                      <MaterialIcons name="insights" size={20} color="#9f43e3" />
-                      <Text style={{ color: '#fff', marginLeft: 8 }}>
-                        Vistos: {stats.seenTotal}
-                      </Text>
-                    </View>
-                    <View style={{ flexDirection: 'row', alignItems: 'center', marginBottom: 12 }}>
-                      <FontAwesome name="star" size={20} color="gold" />
-                      <Text style={{ color: '#fff', marginLeft: 8 }}>
-                        Favoritos: {stats.favoriteTotal}
-                      </Text>
-                    </View>
-                    <View style={{ flexDirection: 'row', alignItems: 'center' }}>
-                      <Entypo name="video" size={20} color="#61dafb" />
-                      <Text style={{ color: '#fff', marginLeft: 8 }}>
-                        Puntuaciones: {stats.ratingsTotal}
-                      </Text>
-                    </View>
-                  </View>
-                  <View style={{ alignItems: 'center' }}>
-                    {stats.averageRating != null ? (
-                      <Progress.Circle
-                        size={80}
-                        progress={stats.averageRating / 5}
-                        showsText
-                        formatText={() => stats.averageRating.toFixed(2)}
-                        thickness={8}
-                        color="#4f46e5"
-                        unfilledColor="#333"
-                        borderWidth={0}
-                      />
-                    ) : (
-                      <Text style={{ color: '#fff', fontSize: 24, fontWeight: 'bold' }}>-</Text>
-                    )}
-                    <Text style={{ color: '#666', fontSize: 12, marginTop: 4 }}>Promedio</Text>
-                  </View>
+            <View className="bg-zinc-900 p-5 rounded-2xl mb-6 flex-row justify-between items-center">
+              <View>
+                <View className="flex-row items-center mb-2">
+                  <MaterialIcons name="insights" size={20} color="#9f43e3" />
+                  <Text className="text-white ml-2">Vistos: {stats.seenTotal}</Text>
                 </View>
-              </Card.Content>
-            </Card>
+                <View className="flex-row items-center mb-2">
+                  <FontAwesome name="star" size={20} color="gold" />
+                  <Text className="text-white ml-2">Favoritos: {stats.favoriteTotal}</Text>
+                </View>
+                <View className="flex-row items-center mb-2">
+                  <Entypo name="heart" size={20} color="#ec4899" />
+                  <Text className="text-white ml-2">Deseados: {stats.wishlistTotal}</Text>
+                </View>
+                <View className="flex-row items-center">
+                  <Entypo name="video" size={20} color="#61dafb" />
+                  <Text className="text-white ml-2">Puntuaciones: {stats.ratingsTotal}</Text>
+                </View>
+              </View>
+              <View className="items-center">
+                {stats.averageRating != null ? (
+                  <Progress.Circle
+                    size={80}
+                    progress={stats.averageRating / 5}
+                    showsText
+                    formatText={() => stats.averageRating.toFixed(2)}
+                    thickness={8}
+                    color="#4f46e5"
+                    unfilledColor="#333"
+                    borderWidth={0}
+                  />
+                ) : (
+                  <Text className="text-white text-2xl font-bold">-</Text>
+                )}
+                <Text className="text-zinc-400 text-sm mt-1">Promedio</Text>
+              </View>
+            </View>
 
             {/* --- Géneros favoritos --- */}
             {stats.favoriteGenres?.length > 0 && (
@@ -279,40 +263,37 @@ export default function HomeScreen() {
                 </View>
               </View>
 
-              {(selectedItem.platforms ?? []).length > 0 && (
-                <View style={{ marginBottom: 16 }}>
-                  <Text variant="titleMedium" style={{ marginBottom: 8, fontWeight: '600' }}>
-                    Disponible en:
-                  </Text>
-                  <View style={{ flexDirection: 'row', flexWrap: 'wrap' }}>
-                    {(selectedItem.platforms ?? []).map((p) => {
-                      const icon = platformIcons[p];
-                      return icon ? (
-                        <View
-                          key={p}
-                          style={{ 
-                            backgroundColor: '#f3f4f6', 
-                            borderRadius: 8, 
-                            marginRight: 8, 
-                            marginBottom: 8, 
-                            padding: 4 
-                          }}
-                        >
-                          <Image
-                            source={icon}
-                            style={{ width: 28, height: 28 }}
-                            resizeMode="contain"
-                          />
-                        </View>
-                      ) : (
-                        <Text key={p} style={{ color: '#666', fontSize: 12, marginRight: 8, marginBottom: 8 }}>
-                          {p}
-                        </Text>
-                      );
-                    })}
+                {(selectedItem.platforms ?? []).length > 0 && (
+                  <View className="mb-4">
+                    <Text className="text-black font-semibold mb-1">
+                      Disponible en:
+                    </Text>
+                    <View className="flex-row flex-wrap">
+                      {(selectedItem.platforms ?? []).map((p) => {
+                        const icon = platformIcons[p];
+                        if (icon) {
+                          return (
+                            <View
+                              key={p}
+                              className="bg-zinc-200 rounded-md mr-2 mb-2 p-1"
+                            >
+                              <Image
+                                source={icon}
+                                style={{ width: 28, height: 28 }}
+                                resizeMode="contain"
+                              />
+                            </View>
+                          );
+                        }
+                        return (
+                          <Text key={p} className="text-zinc-700 text-sm mr-2 mb-2">
+                            {p}
+                          </Text>
+                        );
+                      })}
+                    </View>
                   </View>
-                </View>
-              )}
+                )}
 
               {selectedItem.trailerUrl && (
                 <Button

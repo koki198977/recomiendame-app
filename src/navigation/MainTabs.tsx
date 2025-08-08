@@ -6,6 +6,7 @@ import FavoritesScreen from '../screens/FavoritesScreen';
 import SeenScreen from '../screens/SeenScreen';
 import ProfileScreen from '../screens/ProfileScreen';
 import RecommendationsScreen from '../screens/RecommendationsScreen';
+import WishListScreen from '../screens/WishListScreen';
 
 const Tab = createBottomTabNavigator();
 
@@ -24,17 +25,20 @@ export default function MainTabs() {
             case 'Home':
               iconName = 'home-outline';
               break;
-            case 'Favorites':
-              iconName = 'star-outline';
+            case 'Recommendations':
+              iconName = 'sparkles-outline';
               break;
             case 'Seen':
               iconName = 'eye-outline';
               break;
+            case 'Favorites':
+              iconName = 'star-outline';
+              break;
+            case 'Wishlist':
+              iconName = 'heart-outline';
+              break;
             case 'Profile':
               iconName = 'person-outline';
-              break;
-            case 'Recommendations':
-              iconName = 'sparkles-outline';
               break;
           }
 
@@ -46,6 +50,7 @@ export default function MainTabs() {
       <Tab.Screen name="Recommendations" component={RecommendationsScreen} />
       <Tab.Screen name="Seen" component={SeenScreen} />
       <Tab.Screen name="Favorites" component={FavoritesScreen} />
+      <Tab.Screen name="Wishlist" component={WishListScreen} />
       <Tab.Screen name="Profile" component={ProfileScreen} />
     </Tab.Navigator>
   );
