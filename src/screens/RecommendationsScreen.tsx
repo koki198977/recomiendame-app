@@ -1,4 +1,4 @@
-import React, { useEffect, useState } from 'react';
+import React, { useEffect, useState, useRef } from 'react';
 import {
   View,
   FlatList,
@@ -10,6 +10,7 @@ import {
   Platform,
   Keyboard,
   TouchableOpacity,
+  Animated,
 } from 'react-native';
 import { 
   Text, 
@@ -69,6 +70,39 @@ export default function RecommendationsScreen() {
   const [favoriteIds, setFavoriteIds] = useState<Set<number>>(new Set());
   const [seenIds, setSeenIds] = useState<Set<number>>(new Set());
   const [wishlistIds, setWishlistIds] = useState<Set<number>>(new Set());
+
+  // Variables para la animación del componente de entrada
+  const inputAnimation = useRef(new Animated.Value(1)).current;
+  const [isInputVisible, setIsInputVisible] = useState(true);
+  const lastScrollY = useRef(0);
+
+  // Función para manejar el scroll y ocultar/mostrar el componente de entrada
+  const handleScroll = (event: any) => {
+    const currentScrollY = event.nativeEvent.contentOffset.y;
+    const scrollDelta = currentScrollY - lastScrollY.current;
+    
+    // Solo ocultar si está scrolleando hacia abajo significativamente y el componente está visible
+    if (scrollDelta > 10 && isInputVisible && currentScrollY > 100) {
+      setIsInputVisible(false);
+      Animated.timing(inputAnimation, {
+        toValue: 0,
+        duration: 500,
+        useNativeDriver: false, // Cambiamos a false para poder animar height
+      }).start();
+    }
+    
+    // Mostrar si está scrolleando hacia arriba significativamente y el componente está oculto
+    if (scrollDelta < -10 && !isInputVisible) {
+      setIsInputVisible(true);
+      Animated.timing(inputAnimation, {
+        toValue: 1,
+        duration: 500,
+        useNativeDriver: false, // Cambiamos a false para poder animar height
+      }).start();
+    }
+    
+    lastScrollY.current = currentScrollY;
+  };
 
   const enrichRecommendations = (
     items: Recommendation[],
@@ -264,56 +298,72 @@ export default function RecommendationsScreen() {
       </Text>
 
       {recommendationGenerations < 2 && (
-        <KeyboardAvoidingView
-          behavior={Platform.OS === 'ios' ? 'padding' : 'height'}
-          style={{ marginBottom: 16 }}
+        <Animated.View
+          style={{
+            opacity: inputAnimation,
+            maxHeight: inputAnimation.interpolate({
+              inputRange: [0, 1],
+              outputRange: [0, 200], // Altura máxima cuando está visible
+            }),
+            overflow: 'hidden',
+            marginBottom: inputAnimation.interpolate({
+              inputRange: [0, 1],
+              outputRange: [0, 16], // Margen se reduce a 0 cuando está oculto
+            }),
+          }}
         >
-          <Card style={{ backgroundColor: '#1f1f1f', marginBottom: 8 }}>
-            <Card.Content style={{ padding: 16 }}>
-              <Text variant="bodyMedium" style={{ color: '#fff', marginBottom: 8 }}>
-                Cuéntanos qué tipo de películas o series te gustan:
-              </Text>
-              <TextInput
-                placeholder="Ej: Me gustan comedias románticas y dramas con finales inesperados"
-                placeholderTextColor="#666"
-                style={{
-                  backgroundColor: '#fff',
-                  marginBottom: 12,
-                  color: '#000',
-                  minHeight: 60,
-                }}
-                multiline
-                value={initialPrompt}
-                onChangeText={setInitialPrompt}
-                mode="outlined"
-                theme={{
-                  colors: {
-                    onSurface: '#000',
-                    onSurfaceVariant: '#666',
-                    outline: '#ccc'
-                  }
-                }}
-              />
+          <KeyboardAvoidingView
+            behavior={Platform.OS === 'ios' ? 'padding' : 'height'}
+          >
+            <Card style={{ backgroundColor: '#1f1f1f', marginBottom: 8 }}>
+              <Card.Content style={{ padding: 16 }}>
+                <Text variant="bodyMedium" style={{ color: '#fff', marginBottom: 8 }}>
+                  Cuéntanos qué tipo de películas o series te gustan:
+                </Text>
+                <TextInput
+                  placeholder="Ej: Me gustan comedias románticas y dramas con finales inesperados"
+                  placeholderTextColor="#666"
+                  style={{
+                    backgroundColor: '#fff',
+                    marginBottom: 12,
+                    color: '#000',
+                    minHeight: 60,
+                  }}
+                  multiline
+                  value={initialPrompt}
+                  onChangeText={setInitialPrompt}
+                  mode="outlined"
+                  theme={{
+                    colors: {
+                      onSurface: '#000',
+                      onSurfaceVariant: '#666',
+                      outline: '#ccc'
+                    }
+                  }}
+                />
 
-              <Button
-                mode="contained"
-                onPress={generateNewRecommendations}
-                disabled={isGenerating}
-                loading={isGenerating}
-                style={{ backgroundColor: isGenerating ? '#555' : '#8b5cf6' }}
-                contentStyle={{ paddingVertical: 8 }}
-              >
-                {isGenerating ? '🔄 Generando...' : '🎯 Obtener recomendaciones'}
-              </Button>
-            </Card.Content>
-          </Card>
-        </KeyboardAvoidingView>
+                <Button
+                  mode="contained"
+                  onPress={generateNewRecommendations}
+                  disabled={isGenerating}
+                  loading={isGenerating}
+                  style={{ backgroundColor: isGenerating ? '#555' : '#8b5cf6' }}
+                  contentStyle={{ paddingVertical: 8 }}
+                >
+                  {isGenerating ? '🔄 Generando...' : '🎯 Obtener recomendaciones'}
+                </Button>
+              </Card.Content>
+            </Card>
+          </KeyboardAvoidingView>
+        </Animated.View>
       )}
 
       <FlatList
         data={recommendations.filter(r => !dismissedIds.has(r.id))}
         keyExtractor={item => item.id}
         contentContainerStyle={{ paddingBottom: 80 }}
+        onScroll={handleScroll}
+        scrollEventThrottle={16}
         renderItem={({ item }) => {
           const isFav = favoriteIds.has(item.tmdbId);
           const isSeen = seenIds.has(item.tmdbId);
