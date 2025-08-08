@@ -6,6 +6,7 @@ import {
   ActivityIndicator,
   ScrollView,
   RefreshControl,
+  TouchableOpacity,
 } from 'react-native';
 import { 
   Text, 
@@ -308,24 +309,51 @@ export default function SeenScreen() {
               backgroundColor: '#1f1f1f',
               borderRadius: 12
             }}>
-              <Card.Cover
-                source={item.tmdb?.posterUrl ? { uri: item.tmdb.posterUrl } : undefined}
-                style={{ height: 224, borderRadius: 12 }}
-                resizeMode="cover"
-              />
-              {!item.tmdb?.posterUrl && (
-                <View style={{ 
-                  height: 224, 
-                  borderRadius: 12, 
-                  backgroundColor: '#333', 
-                  justifyContent: 'center', 
-                  alignItems: 'center' 
-                }}>
-                  <Text style={{ color: '#fff', fontSize: 12, textAlign: 'center', paddingHorizontal: 8 }}>
-                    Sin póster
-                  </Text>
-                </View>
-              )}
+                             <View style={{ position: 'relative' }}>
+                 <Card.Cover
+                   source={item.tmdb?.posterUrl ? { uri: item.tmdb.posterUrl } : undefined}
+                   style={{ height: 224, borderRadius: 12 }}
+                   resizeMode="cover"
+                 />
+                 {!item.tmdb?.posterUrl && (
+                   <View style={{ 
+                     height: 224, 
+                     borderRadius: 12, 
+                     backgroundColor: '#333', 
+                     justifyContent: 'center', 
+                     alignItems: 'center' 
+                   }}>
+                     <Text style={{ color: '#fff', fontSize: 12, textAlign: 'center', paddingHorizontal: 8 }}>
+                       Sin póster
+                     </Text>
+                   </View>
+                 )}
+                 
+                 {/* Banda del tipo de medio en la esquina superior derecha */}
+                 <View style={{
+                   position: 'absolute',
+                   top: 8,
+                   right: 8,
+                   backgroundColor: item.tmdb?.mediaType === 'movie' ? '#4f46e5' : '#10b981',
+                   paddingHorizontal: 6,
+                   paddingVertical: 2,
+                   borderRadius: 4,
+                   shadowColor: '#000',
+                   shadowOffset: { width: 0, height: 2 },
+                   shadowOpacity: 0.3,
+                   shadowRadius: 3,
+                   elevation: 3,
+                 }}>
+                   <Text style={{
+                     color: '#fff',
+                     fontSize: 10,
+                     fontWeight: 'bold',
+                     textAlign: 'center',
+                   }}>
+                     {(item.tmdb?.mediaType || 'N/A').toUpperCase()}
+                   </Text>
+                 </View>
+               </View>
 
               <Card.Content style={{ padding: 12 }}>
                 <Text 
@@ -341,44 +369,37 @@ export default function SeenScreen() {
                   {item.tmdb?.title || 'Sin título'}
                 </Text>
 
-                <View style={{ alignItems: 'center', marginBottom: 8 }}>
-                  <Chip
-                    mode="outlined"
-                    style={{ 
-                      backgroundColor: item.tmdb?.mediaType === 'movie' ? '#4f46e5' : '#10b981',
-                      borderColor: item.tmdb?.mediaType === 'movie' ? '#4f46e5' : '#10b981'
+                
+
+                <View style={{ 
+                  gap: 8
+                }}>
+                  <TouchableOpacity
+                    onPress={() => handleOpenModal(item)}
+                    activeOpacity={0.7}
+                    style={{
+                      backgroundColor: item.alreadyRated ? '#7c3aed' : '#a855f7',
+                      borderRadius: 8,
                     }}
-                    textStyle={{ color: '#fff', fontSize: 10 }}
                   >
-                    {(item.tmdb?.mediaType || 'N/A').toUpperCase()}
-                  </Chip>
+                    <Text style={{ fontSize: 12, color: '#fff', textAlign: 'center', paddingVertical: 8 }}>
+                      {item.alreadyRated ? '✏️ Editar evaluación' : '⭐ Evaluar'}
+                    </Text>
+                  </TouchableOpacity>
+
+                  <TouchableOpacity
+                    onPress={() => setConfirmDeleteItem(item)}
+                    activeOpacity={0.7}
+                    style={{
+                      backgroundColor: '#dc2626',
+                      borderRadius: 8,
+                    }}
+                  >
+                    <Text style={{ fontSize: 12, color: '#fff', textAlign: 'center', paddingVertical: 8 }}>
+                      🗑️ Quitar de vistos
+                    </Text>
+                  </TouchableOpacity>
                 </View>
-
-                <Button
-                  mode="contained"
-                  onPress={() => handleOpenModal(item)}
-                  style={{ 
-                    backgroundColor: item.alreadyRated ? '#7c3aed' : '#a855f7',
-                    borderRadius: 20,
-                    marginBottom: 8
-                  }}
-                  contentStyle={{ paddingVertical: 4 }}
-                  labelStyle={{ fontSize: 12 }}
-                  icon={item.alreadyRated ? "pencil" : "star"}
-                >
-                  {item.alreadyRated ? 'Editar evaluación' : 'Evaluar'}
-                </Button>
-
-                <Button
-                  mode="contained"
-                  onPress={() => setConfirmDeleteItem(item)}
-                  style={{ backgroundColor: '#dc2626', borderRadius: 20 }}
-                  contentStyle={{ paddingVertical: 4 }}
-                  labelStyle={{ fontSize: 12 }}
-                  icon="delete"
-                >
-                  Quitar de vistos
-                </Button>
               </Card.Content>
             </Card>
           )}
@@ -410,12 +431,20 @@ export default function SeenScreen() {
             </Text>
             <TextInput
               placeholder="¿Qué te pareció?"
+              placeholderTextColor="#666"
               value={comment}
               onChangeText={setComment}
               multiline
               numberOfLines={4}
               mode="outlined"
               style={{ backgroundColor: '#f3f4f6' }}
+              theme={{
+                colors: {
+                  onSurface: '#000',
+                  onSurfaceVariant: '#666',
+                  outline: '#ccc'
+                }
+              }}
             />
           </Dialog.Content>
           <Dialog.Actions>
