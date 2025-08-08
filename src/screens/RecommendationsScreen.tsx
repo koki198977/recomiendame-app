@@ -9,6 +9,7 @@ import {
   KeyboardAvoidingView,
   Platform,
   Keyboard,
+  TouchableOpacity,
 } from 'react-native';
 import { 
   Text, 
@@ -227,7 +228,7 @@ export default function RecommendationsScreen() {
               </Text>
               <TextInput
                 placeholder="Ej: Me gustan comedias románticas y dramas con finales inesperados"
-                placeholderTextColor="#ccc"
+                placeholderTextColor="#666"
                 style={{
                   backgroundColor: '#fff',
                   marginBottom: 12,
@@ -238,6 +239,13 @@ export default function RecommendationsScreen() {
                 value={initialPrompt}
                 onChangeText={setInitialPrompt}
                 mode="outlined"
+                theme={{
+                  colors: {
+                    onSurface: '#000',
+                    onSurfaceVariant: '#666',
+                    outline: '#ccc'
+                  }
+                }}
               />
 
               <Button
@@ -300,54 +308,62 @@ export default function RecommendationsScreen() {
                     <Text variant="bodySmall" style={{ color: '#aaa', marginBottom: 6 }}>
                       {item.releaseDate?.substring(0, 10)}
                     </Text>
-                    <Text variant="bodyMedium" style={{ color: '#eee' }} numberOfLines={3}>
+                    <Text variant="bodyMedium" style={{ color: '#eee', marginBottom: 12 }} numberOfLines={3}>
                       {item.overview}
                     </Text>
                     
-                    <View style={{ flexDirection: 'row', flexWrap: 'wrap', marginTop: 12, gap: 8 }}>
-                      <Button
-                        mode="contained"
-                        onPress={() => markAsSeen(item)}
-                        disabled={item.seen}
-                        style={{
-                          backgroundColor: item.seen ? '#4c1d95' : '#7c3aed',
-                          borderRadius: 16,
-                        }}
-                        contentStyle={{ paddingHorizontal: 12, paddingVertical: 4 }}
-                        labelStyle={{ fontSize: 12 }}
-                        icon={item.seen ? "check" : "eye"}
-                      >
-                        {item.seen ? 'Visto' : 'Visto'}
-                      </Button>
+                    <View style={{ 
+                      marginTop: 8,
+                    }}>
+                      <View style={{ 
+                        flexDirection: 'row', 
+                        justifyContent: 'space-between',
+                        marginBottom: 8,
+                        gap: 8
+                      }}>
+                        <TouchableOpacity
+                          onPress={() => markAsSeen(item)}
+                          disabled={item.seen}
+                          activeOpacity={0.7}
+                          style={{
+                            backgroundColor: item.seen ? '#4c1d95' : '#7c3aed',
+                            borderRadius: 8,
+                            flex: 1,
+                          }}
+                        >
+                          <Text style={{ fontSize: 12, color: '#fff', textAlign: 'center', paddingVertical: 6 }}>
+                            {item.seen ? '✅ Visto' : '⭐ Visto'}
+                          </Text>
+                        </TouchableOpacity>
 
-                      <Button
-                        mode="contained"
-                        onPress={() => markAsFavorite(item)}
-                        disabled={isFav}
-                        style={{
-                          backgroundColor: isFav ? '#881337' : '#ec4899',
-                          borderRadius: 16,
-                        }}
-                        contentStyle={{ paddingHorizontal: 12, paddingVertical: 4 }}
-                        labelStyle={{ fontSize: 12 }}
-                        icon="heart"
-                      >
-                        {isFav ? 'Agregado' : 'Favorito'}
-                      </Button>
+                        <TouchableOpacity
+                          onPress={() => markAsFavorite(item)}
+                          disabled={isFav}
+                          activeOpacity={0.7}
+                          style={{
+                            backgroundColor: isFav ? '#881337' : '#ec4899',
+                            borderRadius: 8,
+                            flex: 1,
+                          }}
+                        >
+                          <Text style={{ fontSize: 12, color: '#fff', textAlign: 'center', paddingVertical: 6 }}>
+                            {isFav ? '❤️ Agregado' : '❤️ Favorito'}
+                          </Text>
+                        </TouchableOpacity>
+                      </View>
 
-                      <Button
-                        mode="contained"
+                      <TouchableOpacity
                         onPress={() => setDismissedIds(prev => new Set(prev).add(item.id))}
+                        activeOpacity={0.7}
                         style={{
                           backgroundColor: '#444',
-                          borderRadius: 16,
+                          borderRadius: 8,
                         }}
-                        contentStyle={{ paddingHorizontal: 12, paddingVertical: 4 }}
-                        labelStyle={{ fontSize: 12 }}
-                        icon="eye-off"
                       >
-                        No me interesa
-                      </Button>
+                        <Text style={{ fontSize: 12, color: '#fff', textAlign: 'center', paddingVertical: 6 }}>
+                          🙈 No me interesa
+                        </Text>
+                      </TouchableOpacity>
                     </View>
                   </View>
                 </View>
@@ -411,9 +427,8 @@ export default function RecommendationsScreen() {
                     mode="contained"
                     onPress={() => Linking.openURL(selectedItem.trailerUrl!)}
                     style={{ backgroundColor: '#dc2626', marginBottom: 20 }}
-                    icon="play"
                   >
-                    Ver tráiler
+                    ▶️ Ver tráiler
                   </Button>
                 )}
               </Dialog.Content>
