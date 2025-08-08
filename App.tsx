@@ -18,7 +18,9 @@ import FavoritesScreen from './src/screens/FavoritesScreen';
 import SeenScreen from './src/screens/SeenScreen';
 import ProfileScreen from './src/screens/ProfileScreen';
 import RecommendationsScreen from './src/screens/RecommendationsScreen';
+
 import { API_URL } from '@env';
+import WishListScreen from './src/screens/WishListScreen';
 
 const Stack = createNativeStackNavigator();
 const Tab   = createBottomTabNavigator();
@@ -49,6 +51,7 @@ function MainTabs() {
             case 'Seen':            iconName = 'eye-outline'; break;
             case 'Favorites':       iconName = 'star-outline'; break;
             case 'Recommendations': iconName = 'sparkles-outline'; break;
+            case 'Wishlist':        iconName = 'heart-outline'; break;
             case 'Profile':         iconName = 'person-outline'; break;
             default:                iconName = 'ellipse-outline';
           }
@@ -60,6 +63,7 @@ function MainTabs() {
       <Tab.Screen name="Recommendations" component={RecommendationsScreen} />
       <Tab.Screen name="Seen" component={SeenScreen} />
       <Tab.Screen name="Favorites" component={FavoritesScreen} />
+      <Tab.Screen name="Wishlist" component={WishListScreen} />
       <Tab.Screen name="Profile" component={ProfileScreen} />
     </Tab.Navigator>
   );

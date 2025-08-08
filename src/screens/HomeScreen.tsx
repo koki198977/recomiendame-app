@@ -1,5 +1,3 @@
-// src/screens/HomeScreen.tsx
-
 import React, { useEffect, useState, useCallback } from 'react';
 import {
   View,
@@ -18,7 +16,7 @@ import AsyncStorage from '@react-native-async-storage/async-storage';
 import axios from 'axios';
 import Toast from 'react-native-toast-message';
 import { API_URL } from '@env';
-import { FontAwesome, MaterialIcons, Entypo, Feather } from '@expo/vector-icons';
+import { FontAwesome, MaterialIcons, Entypo } from '@expo/vector-icons';
 import * as Progress from 'react-native-progress';
 import { useFocusEffect } from '@react-navigation/native';
 
@@ -43,25 +41,17 @@ const platformIcons: Record<string, any> = {
   Netflix: require('../../assets/platforms/netflix.png'),
   'Disney Plus': require('../../assets/platforms/disneyplus.png'),
   'Amazon Prime Video': require('../../assets/platforms/primevideo.png'),
-  'Amazon Channel': require('../../assets/platforms/primevideo.png'),
   'HBO Max': require('../../assets/platforms/hbomax.png'),
   'Apple TV+': require('../../assets/platforms/appletv.png'),
-  'Apple TV Channel': require('../../assets/platforms/appletv.png'),
   YouTube: require('../../assets/platforms/youtube.png'),
-  MovistarTV: require('../../assets/platforms/movistarplay.png'),
-  'Paramount Plus': require('../../assets/platforms/paramountplus.png'),
-  'Paramount +': require('../../assets/platforms/paramountplus.png'),
-  'Pluto TV': require('../../assets/platforms/plutotv.png'),
-  'Universal+ Amazon Channel': require('../../assets/platforms/universalplus.png'),
   Hulu: require('../../assets/platforms/hulu.png'),
+  // ...otros
 };
 
 export default function HomeScreen() {
   const [stats, setStats] = useState<any>(null);
   const [loading, setLoading] = useState<boolean>(true);
   const [refreshing, setRefreshing] = useState<boolean>(false);
-
-  // Para el popup de detalle:
   const [selectedItem, setSelectedItem] = useState<Recommendation | null>(null);
 
   const fetchStats = async () => {
@@ -121,13 +111,17 @@ export default function HomeScreen() {
             {/* --- Estadísticas --- */}
             <View className="bg-zinc-900 p-5 rounded-2xl mb-6 flex-row justify-between items-center">
               <View>
-                <View className="flex-row items-center mb-3">
+                <View className="flex-row items-center mb-2">
                   <MaterialIcons name="insights" size={20} color="#9f43e3" />
                   <Text className="text-white ml-2">Vistos: {stats.seenTotal}</Text>
                 </View>
-                <View className="flex-row items-center mb-3">
+                <View className="flex-row items-center mb-2">
                   <FontAwesome name="star" size={20} color="gold" />
                   <Text className="text-white ml-2">Favoritos: {stats.favoriteTotal}</Text>
+                </View>
+                <View className="flex-row items-center mb-2">
+                  <Entypo name="heart" size={20} color="#ec4899" />
+                  <Text className="text-white ml-2">Deseados: {stats.wishlistTotal}</Text>
                 </View>
                 <View className="flex-row items-center">
                   <Entypo name="video" size={20} color="#61dafb" />
@@ -261,18 +255,21 @@ export default function HomeScreen() {
                     <View className="flex-row flex-wrap">
                       {(selectedItem.platforms ?? []).map((p) => {
                         const icon = platformIcons[p];
-                        return icon ? (
-                          <View
-                            key={p}
-                            className="bg-zinc-200 rounded-md mr-2 mb-2 p-1"
-                          >
-                            <Image
-                              source={icon}
-                              style={{ width: 28, height: 28 }}
-                              resizeMode="contain"
-                            />
-                          </View>
-                        ) : (
+                        if (icon) {
+                          return (
+                            <View
+                              key={p}
+                              className="bg-zinc-200 rounded-md mr-2 mb-2 p-1"
+                            >
+                              <Image
+                                source={icon}
+                                style={{ width: 28, height: 28 }}
+                                resizeMode="contain"
+                              />
+                            </View>
+                          );
+                        }
+                        return (
                           <Text key={p} className="text-zinc-700 text-sm mr-2 mb-2">
                             {p}
                           </Text>
