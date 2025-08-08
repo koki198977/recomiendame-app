@@ -187,20 +187,21 @@ export default function WishListScreen() {
               <Text className="text-white font-semibold text-sm mb-2 text-center">{title}</Text>
 
               <TouchableOpacity
-                disabled={isRemoving}
                 onPress={() => setConfirmDeleteItem(item)}
-                className={`px-3 py-1 rounded-full self-center flex-row items-center space-x-2 ${
-                  isRemoving ? 'bg-zinc-700' : 'bg-red-600'
-                }`}
+                disabled={isRemoving}
+                activeOpacity={0.7}
+                style={{
+                  backgroundColor: '#dc2626',
+                  borderRadius: 8,
+                  paddingVertical: 8,
+                  paddingHorizontal: 12,
+                  alignItems: 'center',
+                  marginTop: 8,
+                }}
               >
-                {isRemoving ? (
-                  <ActivityIndicator size="small" color="white" />
-                ) : (
-                  <>
-                    <Feather name="trash-2" size={16} color="white" />
-                    <Text className="text-white text-sm">Quitar</Text>
-                  </>
-                )}
+                <Text style={{ fontSize: 12, color: '#fff', textAlign: 'center' }}>
+                  {isRemoving ? '🔄 Quitando...' : '🗑️ Quitar Deseado'}
+                </Text>
               </TouchableOpacity>
             </View>
           );

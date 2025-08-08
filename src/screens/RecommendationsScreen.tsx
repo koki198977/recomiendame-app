@@ -16,7 +16,7 @@ import {
   Card, 
   Button, 
   Portal, 
-  Dialog,
+  Modal,
   TextInput,
   Chip,
   Divider
@@ -43,6 +43,17 @@ interface Recommendation {
   platforms?: string[];
   trailerUrl?: string;
 }
+
+const platformIcons: Record<string, any> = {
+  Netflix: require('../../assets/platforms/netflix.png'),
+  'Disney Plus': require('../../assets/platforms/disneyplus.png'),
+  'Amazon Prime Video': require('../../assets/platforms/primevideo.png'),
+  'HBO Max': require('../../assets/platforms/hbomax.png'),
+  'Apple TV+': require('../../assets/platforms/appletv.png'),
+  YouTube: require('../../assets/platforms/youtube.png'),
+  Hulu: require('../../assets/platforms/hulu.png'),
+  // ...otros
+};
 
 export default function RecommendationsScreen() {
   const [recommendations, setRecommendations] = useState<Recommendation[]>([]);
@@ -180,7 +191,7 @@ export default function RecommendationsScreen() {
       const token = await AsyncStorage.getItem('token');
       await axios.post(
         `${API_URL}/wishlist`,
-        { tmdbId: item.tmdbId, title: item.title, mediaType: item.mediaType },
+        { tmdbId: item.tmdbId, mediaType: item.mediaType },
         { headers: { Authorization: `Bearer ${token}` } }
       );
 
@@ -309,197 +320,232 @@ export default function RecommendationsScreen() {
           const isWish = wishlistIds.has(item.tmdbId);
 
           return (
-            <Card style={{ 
-              marginBottom: 24, 
-              backgroundColor: '#1f1f1f',
-              borderRadius: 12
-            }}>
-              <Card.Content style={{ padding: 16 }}>
-                <View style={{ flexDirection: 'row', alignItems: 'flex-start' }}>
-                  {item.posterUrl ? (
-                    <Image
-                      source={{ uri: item.posterUrl }}
-                      style={{ width: 96, height: 144, borderRadius: 8, marginRight: 16 }}
-                      resizeMode="cover"
-                    />
-                  ) : (
-                    <View
-                      style={{
-                        width: 96,
-                        height: 144,
-                        backgroundColor: '#555',
-                        borderRadius: 8,
-                        marginRight: 16,
-                        justifyContent: 'center',
-                        alignItems: 'center',
-                      }}
-                    >
-                      <Text style={{ color: '#fff', fontSize: 12, textAlign: 'center' }}>
-                        Póster no disponible
-                      </Text>
-                    </View>
-                  )}
-                  <View style={{ flex: 1 }}>
-                    <Text variant="titleMedium" style={{ color: '#fff', marginBottom: 4, fontWeight: '600' }}>
-                      {item.title}
-                    </Text>
-                    <Text variant="bodySmall" style={{ color: '#aaa', marginBottom: 6 }}>
-                      {item.releaseDate?.substring(0, 10)}
-                    </Text>
-                    <Text variant="bodyMedium" style={{ color: '#eee', marginBottom: 12 }} numberOfLines={3}>
-                      {item.overview}
-                    </Text>
-                    
-                    <View style={{ 
-                      marginTop: 8,
-                    }}>
-                      <View style={{ 
-                        flexDirection: 'row', 
-                        justifyContent: 'space-between',
-                        marginBottom: 8,
-                        gap: 8
-                      }}>
-                        <TouchableOpacity
-                          onPress={() => markAsSeen(item)}
-                          disabled={isSeen}
-                          activeOpacity={0.7}
-                          style={{
-                            backgroundColor: isSeen ? '#4c1d95' : '#7c3aed',
-                            borderRadius: 8,
-                            flex: 1,
-                          }}
-                        >
-                          <Text style={{ fontSize: 12, color: '#fff', textAlign: 'center', paddingVertical: 6 }}>
-                            {isSeen ? '✅ Visto' : '⭐ Visto'}
-                          </Text>
-                        </TouchableOpacity>
-
-                        <TouchableOpacity
-                          onPress={() => markAsFavorite(item)}
-                          disabled={isFav}
-                          activeOpacity={0.7}
-                          style={{
-                            backgroundColor: isFav ? '#881337' : '#ec4899',
-                            borderRadius: 8,
-                            flex: 1,
-                          }}
-                        >
-                          <Text style={{ fontSize: 12, color: '#fff', textAlign: 'center', paddingVertical: 6 }}>
-                            {isFav ? '❤️ Agregado' : '❤️ Favorito'}
-                          </Text>
-                        </TouchableOpacity>
+            <TouchableOpacity
+              onPress={() => setSelectedItem(item)}
+              activeOpacity={0.8}
+            >
+              <Card style={{ 
+                marginBottom: 24, 
+                backgroundColor: '#1f1f1f',
+                borderRadius: 12
+              }}>
+                <Card.Content style={{ padding: 16 }}>
+                  <View style={{ flexDirection: 'row', alignItems: 'flex-start' }}>
+                    {item.posterUrl ? (
+                      <Image
+                        source={{ uri: item.posterUrl }}
+                        style={{ width: 96, height: 144, borderRadius: 8, marginRight: 16 }}
+                        resizeMode="cover"
+                      />
+                    ) : (
+                      <View
+                        style={{
+                          width: 96,
+                          height: 144,
+                          backgroundColor: '#555',
+                          borderRadius: 8,
+                          marginRight: 16,
+                          justifyContent: 'center',
+                          alignItems: 'center',
+                        }}
+                      >
+                        <Text style={{ color: '#fff', fontSize: 12, textAlign: 'center' }}>
+                          Póster no disponible
+                        </Text>
                       </View>
-
+                    )}
+                    <View style={{ flex: 1 }}>
+                      <Text variant="titleMedium" style={{ color: '#fff', marginBottom: 4, fontWeight: '600' }}>
+                        {item.title}
+                      </Text>
+                      <Text variant="bodySmall" style={{ color: '#aaa', marginBottom: 6 }}>
+                        {item.releaseDate?.substring(0, 10)}
+                      </Text>
+                      <Text variant="bodyMedium" style={{ color: '#eee', marginBottom: 12 }} numberOfLines={3}>
+                        {item.overview}
+                      </Text>
+                      
                       <View style={{ 
-                        flexDirection: 'row', 
-                        justifyContent: 'space-between',
-                        gap: 8
+                        marginTop: 8,
                       }}>
-                        <TouchableOpacity
-                          onPress={() => markAsWish(item)}
-                          disabled={isWish}
-                          activeOpacity={0.7}
-                          style={{
-                            backgroundColor: isWish ? '#6b7280' : '#f472b6',
-                            borderRadius: 8,
-                            flex: 1,
-                          }}
-                        >
-                          <Text style={{ fontSize: 12, color: '#fff', textAlign: 'center', paddingVertical: 6 }}>
-                            {isWish ? '💖 En Deseados' : '💖 Deseados'}
-                          </Text>
-                        </TouchableOpacity>
+                        <View style={{ 
+                          flexDirection: 'row', 
+                          justifyContent: 'space-between',
+                          marginBottom: 8,
+                          gap: 8
+                        }}>
+                          <TouchableOpacity
+                            onPress={() => markAsSeen(item)}
+                            disabled={isSeen}
+                            activeOpacity={0.7}
+                            style={{
+                              backgroundColor: isSeen ? '#4c1d95' : '#7c3aed',
+                              borderRadius: 8,
+                              flex: 1,
+                            }}
+                          >
+                            <Text style={{ fontSize: 12, color: '#fff', textAlign: 'center', paddingVertical: 6 }}>
+                              {isSeen ? '✅ Visto' : '⭐ Visto'}
+                            </Text>
+                          </TouchableOpacity>
 
-                        <TouchableOpacity
-                          onPress={() => setDismissedIds(prev => new Set(prev).add(item.id))}
-                          activeOpacity={0.7}
-                          style={{
-                            backgroundColor: '#444',
-                            borderRadius: 8,
-                            flex: 1,
-                          }}
-                        >
-                          <Text style={{ fontSize: 12, color: '#fff', textAlign: 'center', paddingVertical: 6 }}>
-                            🙈 No me interesa
-                          </Text>
-                        </TouchableOpacity>
+                          <TouchableOpacity
+                            onPress={() => markAsFavorite(item)}
+                            disabled={isFav}
+                            activeOpacity={0.7}
+                            style={{
+                              backgroundColor: isFav ? '#881337' : '#ec4899',
+                              borderRadius: 8,
+                              flex: 1,
+                            }}
+                          >
+                            <Text style={{ fontSize: 12, color: '#fff', textAlign: 'center', paddingVertical: 6 }}>
+                              {isFav ? '❤️ Agregado' : '❤️ Favorito'}
+                            </Text>
+                          </TouchableOpacity>
+                        </View>
+
+                        <View style={{ 
+                          flexDirection: 'row', 
+                          justifyContent: 'space-between',
+                          gap: 8
+                        }}>
+                          <TouchableOpacity
+                            onPress={() => markAsWish(item)}
+                            disabled={isWish}
+                            activeOpacity={0.7}
+                            style={{
+                              backgroundColor: isWish ? '#881337' : '#ec4899',
+                              borderRadius: 8,
+                              flex: 1,
+                            }}
+                          >
+                            <Text style={{ fontSize: 12, color: '#fff', textAlign: 'center', paddingVertical: 6 }}>
+                              {isWish ? '💖 En Deseados' : '💖 Deseados'}
+                            </Text>
+                          </TouchableOpacity>
+
+                          <TouchableOpacity
+                            onPress={() => setDismissedIds(prev => new Set(prev).add(item.id))}
+                            activeOpacity={0.7}
+                            style={{
+                              backgroundColor: '#444',
+                              borderRadius: 8,
+                              flex: 1,
+                            }}
+                          >
+                            <Text style={{ fontSize: 12, color: '#fff', textAlign: 'center', paddingVertical: 6 }}>
+                              🙈 No me interesa
+                            </Text>
+                          </TouchableOpacity>
+                        </View>
                       </View>
                     </View>
                   </View>
-                </View>
-              </Card.Content>
-            </Card>
+                </Card.Content>
+              </Card>
+            </TouchableOpacity>
           );
         }}
       />
 
-      {/* Dialog de detalle */}
+      {/* --- Modal de detalle mejorado --- */}
       <Portal>
-        <Dialog
+        <Modal
           visible={selectedItem !== null}
           onDismiss={() => setSelectedItem(null)}
-          style={{ backgroundColor: '#fff' }}
+          contentContainerStyle={{
+            backgroundColor: '#fff',
+            margin: 20,
+            borderRadius: 16,
+            maxHeight: '85%',
+          }}
         >
           {selectedItem && (
-            <>
-              <Dialog.Title>{selectedItem.title}</Dialog.Title>
-              <Dialog.Content>
-                <Text variant="bodyMedium" style={{ color: '#333', marginBottom: 20 }}>
-                  {selectedItem.overview}
-                </Text>
-                
-                <View style={{ flexDirection: 'row', justifyContent: 'space-around', marginBottom: 20 }}>
-                  <View style={{ alignItems: 'center' }}>
-                    <Text variant="labelSmall" style={{ color: '#666' }}>⭐ Votos</Text>
-                    <Text variant="titleMedium" style={{ color: '#fbbf24', fontWeight: '600' }}>
-                      {selectedItem.voteAverage}
-                    </Text>
-                  </View>
-                  <View style={{ alignItems: 'center' }}>
-                    <Text variant="labelSmall" style={{ color: '#666' }}>🔥 Popularidad</Text>
-                    <Text variant="titleMedium" style={{ color: '#db2777', fontWeight: '600' }}>
-                      {selectedItem.popularity ?? '-'}
-                    </Text>
-                  </View>
-                  <View style={{ alignItems: 'center' }}>
-                    <Text variant="labelSmall" style={{ color: '#666' }}>🎬 Tipo</Text>
-                    <Text variant="titleMedium" style={{ color: '#059669', fontWeight: '600' }}>
-                      {selectedItem.mediaType.toUpperCase()}
-                    </Text>
+            <ScrollView
+              contentContainerStyle={{ padding: 20 }}
+              showsVerticalScrollIndicator={false}
+            >
+              <Text variant="headlineSmall" style={{ marginBottom: 8, fontWeight: 'bold' }}>
+                {selectedItem.title}
+              </Text>
+              <Text variant="bodyMedium" style={{ marginBottom: 16, color: '#666' }}>
+                {selectedItem.overview}
+              </Text>
+
+              <View style={{ flexDirection: 'row', justifyContent: 'space-around', alignItems: 'center', marginBottom: 16 }}>
+                <View style={{ alignItems: 'center' }}>
+                  <Text variant="labelSmall" style={{ color: '#666' }}>⭐ Votos</Text>
+                  <Text variant="titleMedium" style={{ color: '#f59e0b', fontWeight: 'bold' }}>
+                    {selectedItem.voteAverage}
+                  </Text>
+                </View>
+                <View style={{ alignItems: 'center' }}>
+                  <Text variant="labelSmall" style={{ color: '#666' }}>🔥 Popularidad</Text>
+                  <Text variant="titleMedium" style={{ color: '#ec4899', fontWeight: 'bold' }}>
+                    {selectedItem.popularity ?? '-'}
+                  </Text>
+                </View>
+                <View style={{ alignItems: 'center' }}>
+                  <Text variant="labelSmall" style={{ color: '#666' }}>🎬 Tipo</Text>
+                  <Text variant="titleMedium" style={{ color: '#10b981', fontWeight: 'bold' }}>
+                    {selectedItem.mediaType.toUpperCase()}
+                  </Text>
+                </View>
+              </View>
+
+              {(selectedItem.platforms ?? []).length > 0 && (
+                <View className="mb-4">
+                  <Text className="text-black font-semibold mb-1">
+                    Disponible en:
+                  </Text>
+                  <View className="flex-row flex-wrap">
+                    {(selectedItem.platforms ?? []).map((p) => {
+                      const icon = platformIcons[p];
+                      if (icon) {
+                        return (
+                          <View
+                            key={p}
+                            className="bg-zinc-200 rounded-md mr-2 mb-2 p-1"
+                          >
+                            <Image
+                              source={icon}
+                              style={{ width: 28, height: 28 }}
+                              resizeMode="contain"
+                            />
+                          </View>
+                        );
+                      }
+                      return (
+                        <Text key={p} className="text-zinc-700 text-sm mr-2 mb-2">
+                          {p}
+                        </Text>
+                      );
+                    })}
                   </View>
                 </View>
+              )}
 
-                {Array.isArray(selectedItem.platforms) && selectedItem.platforms.length > 0 && (
-                  <View style={{ marginBottom: 20 }}>
-                    <Text variant="titleMedium" style={{ marginBottom: 8, fontWeight: '600' }}>
-                      Disponible en:
-                    </Text>
-                    {selectedItem.platforms.map(platform => (
-                      <Text key={platform} variant="bodyMedium" style={{ color: '#444' }}>
-                        • {platform}
-                      </Text>
-                    ))}
-                  </View>
-                )}
-
-                {selectedItem.trailerUrl && (
-                  <Button
-                    mode="contained"
-                    onPress={() => Linking.openURL(selectedItem.trailerUrl!)}
-                    style={{ backgroundColor: '#dc2626', marginBottom: 20 }}
-                  >
-                    ▶️ Ver tráiler
-                  </Button>
-                )}
-              </Dialog.Content>
-              <Dialog.Actions>
-                <Button onPress={() => setSelectedItem(null)} mode="contained">
-                  Cerrar
+              {selectedItem.trailerUrl && (
+                <Button
+                  mode="contained"
+                  onPress={() => Linking.openURL(selectedItem.trailerUrl!)}
+                  style={{ marginBottom: 16 }}
+                  icon="play"
+                >
+                  Ver tráiler
                 </Button>
-              </Dialog.Actions>
-            </>
+              )}
+
+              <Button
+                mode="outlined"
+                onPress={() => setSelectedItem(null)}
+              >
+                Cerrar
+              </Button>
+            </ScrollView>
           )}
-        </Dialog>
+        </Modal>
       </Portal>
     </View>
   );

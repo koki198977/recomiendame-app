@@ -46,12 +46,36 @@ export default function MainTabs() {
         },
       })}
     >
-      <Tab.Screen name="Home" component={HomeScreen} />
-      <Tab.Screen name="Recommendations" component={RecommendationsScreen} />
-      <Tab.Screen name="Seen" component={SeenScreen} />
-      <Tab.Screen name="Favorites" component={FavoritesScreen} />
-      <Tab.Screen name="Wishlist" component={WishListScreen} />
-      <Tab.Screen name="Profile" component={ProfileScreen} />
+      <Tab.Screen 
+        name="Home" 
+        component={HomeScreen} 
+        options={{ tabBarLabel: 'Inicio' }}
+      />
+      <Tab.Screen 
+        name="Recommendations" 
+        component={RecommendationsScreen} 
+        options={{ tabBarLabel: 'Recomendaciones' }}
+      />
+      <Tab.Screen 
+        name="Seen" 
+        component={SeenScreen} 
+        options={{ tabBarLabel: 'Vistos' }}
+      />
+      <Tab.Screen 
+        name="Favorites" 
+        component={FavoritesScreen} 
+        options={{ tabBarLabel: 'Favoritos' }}
+      />
+      <Tab.Screen 
+        name="Wishlist" 
+        component={WishListScreen} 
+        options={{ tabBarLabel: 'Deseados' }}
+      />
+      <Tab.Screen 
+        name="Profile" 
+        component={ProfileScreen} 
+        options={{ tabBarLabel: 'Perfil' }}
+      />
     </Tab.Navigator>
   );
 }

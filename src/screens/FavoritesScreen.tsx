@@ -5,6 +5,7 @@ import {
   Image,
   ActivityIndicator,
   RefreshControl,
+  TouchableOpacity,
 } from 'react-native';
 import { 
   Text, 
@@ -293,31 +294,41 @@ export default function FavoritesScreen() {
                 </Text>
 
                 {isSearching ? (
-                  <Button
-                    mode="contained"
+                  <TouchableOpacity
                     onPress={() => handleAddFavorite(tmdbId, mediaType, title)}
                     disabled={isAdding}
-                    loading={isAdding}
-                    icon="star"
-                    style={{ borderRadius: 20 }}
-                    contentStyle={{ paddingVertical: 4 }}
-                    labelStyle={{ fontSize: 12 }}
+                    activeOpacity={0.7}
+                    style={{
+                      backgroundColor: '#7c3aed',
+                      borderRadius: 8,
+                      paddingVertical: 8,
+                      paddingHorizontal: 12,
+                      alignItems: 'center',
+                      marginTop: 8,
+                    }}
                   >
-                    + Favorito
-                  </Button>
+                    <Text style={{ fontSize: 12, color: '#fff', textAlign: 'center' }}>
+                      {isAdding ? '🔄 Agregando...' : '⭐ Agregar a Favoritos'}
+                    </Text>
+                  </TouchableOpacity>
                 ) : (
-                  <Button
-                    mode="contained"
+                  <TouchableOpacity
                     onPress={() => setConfirmDeleteItem(item)}
                     disabled={isRemoving}
-                    loading={isRemoving}
-                    icon="delete"
-                    style={{ backgroundColor: '#dc2626', borderRadius: 20 }}
-                    contentStyle={{ paddingVertical: 4 }}
-                    labelStyle={{ fontSize: 12 }}
+                    activeOpacity={0.7}
+                    style={{
+                      backgroundColor: '#dc2626',
+                      borderRadius: 8,
+                      paddingVertical: 8,
+                      paddingHorizontal: 12,
+                      alignItems: 'center',
+                      marginTop: 8,
+                    }}
                   >
-                    Quitar
-                  </Button>
+                    <Text style={{ fontSize: 12, color: '#fff', textAlign: 'center' }}>
+                      {isRemoving ? '🔄 Quitando...' : '🗑️ Quitar Favorito'}
+                    </Text>
+                  </TouchableOpacity>
                 )}
               </Card.Content>
             </Card>
