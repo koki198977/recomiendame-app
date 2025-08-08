@@ -4,6 +4,7 @@ import { View, ActivityIndicator, Image, Text } from 'react-native';
 import AsyncStorage from '@react-native-async-storage/async-storage';
 import axios from 'axios';
 import Toast from 'react-native-toast-message';
+import { Provider as PaperProvider, MD3DarkTheme } from 'react-native-paper';
 
 import { NavigationContainer } from '@react-navigation/native';
 import { createNativeStackNavigator } from '@react-navigation/native-stack';
@@ -22,6 +23,21 @@ import { API_URL } from '@env';
 
 const Stack = createNativeStackNavigator();
 const Tab   = createBottomTabNavigator();
+
+// Tema personalizado para React Native Paper
+const customTheme = {
+  ...MD3DarkTheme,
+  colors: {
+    ...MD3DarkTheme.colors,
+    primary: '#a855f7',
+    secondary: '#9333ea',
+    surface: '#1e1e1e',
+    background: '#000000',
+    surfaceVariant: '#27272a',
+    onSurface: '#ffffff',
+    onSurfaceVariant: '#cccccc',
+  },
+};
 
 function LogoTitle() {
   return (
@@ -90,46 +106,50 @@ export default function App() {
 
   if (isAuthenticated === null) {
     return (
-      <View className="flex-1 justify-center items-center bg-black">
-        <ActivityIndicator color="#a855f7" size="large" />
-      </View>
+      <PaperProvider theme={customTheme}>
+        <View className="flex-1 justify-center items-center bg-black">
+          <ActivityIndicator color="#a855f7" size="large" />
+        </View>
+      </PaperProvider>
     );
   }
 
   return (
-    <NavigationContainer>
-      <Stack.Navigator
-        screenOptions={{ headerShown: false }}
-        initialRouteName={isAuthenticated ? 'MainTabs' : 'Login'}
-      >
-        <Stack.Screen name="Login" component={LoginScreen} />
+    <PaperProvider theme={customTheme}>
+      <NavigationContainer>
+        <Stack.Navigator
+          screenOptions={{ headerShown: false }}
+          initialRouteName={isAuthenticated ? 'MainTabs' : 'Login'}
+        >
+          <Stack.Screen name="Login" component={LoginScreen} />
 
-        <Stack.Screen
-          name="Register"
-          component={RegisterScreen}
-          options={{
-            headerShown: true,
-            headerTitle: () => <LogoTitle />,
-            headerStyle: { backgroundColor: '#0f0f0f' },
-            headerTintColor: '#fff',
-          }}
-        />
+          <Stack.Screen
+            name="Register"
+            component={RegisterScreen}
+            options={{
+              headerShown: true,
+              headerTitle: () => <LogoTitle />,
+              headerStyle: { backgroundColor: '#0f0f0f' },
+              headerTintColor: '#fff',
+            }}
+          />
 
-        <Stack.Screen
-          name="ForgotPassword"
-          component={ForgotPasswordScreen}
-          options={{
-            headerShown: true,
-            headerTitle: () => <LogoTitle />,
-            headerStyle: { backgroundColor: '#0f0f0f' },
-            headerTintColor: '#fff',
-          }}
-        />
+          <Stack.Screen
+            name="ForgotPassword"
+            component={ForgotPasswordScreen}
+            options={{
+              headerShown: true,
+              headerTitle: () => <LogoTitle />,
+              headerStyle: { backgroundColor: '#0f0f0f' },
+              headerTintColor: '#fff',
+            }}
+          />
 
-        <Stack.Screen name="MainTabs" component={MainTabs} />
-      </Stack.Navigator>
+          <Stack.Screen name="MainTabs" component={MainTabs} />
+        </Stack.Navigator>
 
-      <Toast />
-    </NavigationContainer>
+        <Toast />
+      </NavigationContainer>
+    </PaperProvider>
   );
 }

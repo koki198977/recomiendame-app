@@ -1,15 +1,20 @@
 import React, { useCallback, useState } from 'react';
 import {
   View,
-  Text,
   FlatList,
   Image,
-  TextInput,
-  TouchableOpacity,
   ActivityIndicator,
   RefreshControl,
-  Modal,
 } from 'react-native';
+import { 
+  Text, 
+  Searchbar, 
+  Card, 
+  Button, 
+  Portal, 
+  Dialog,
+  Chip
+} from 'react-native-paper';
 import axios from 'axios';
 import AsyncStorage from '@react-native-async-storage/async-storage';
 import Toast from 'react-native-toast-message';
@@ -156,7 +161,7 @@ export default function FavoritesScreen() {
 
   if (loading && !favorites.length) {
     return (
-      <View className="flex-1 justify-center items-center bg-black">
+      <View style={{ flex: 1, justifyContent: 'center', alignItems: 'center', backgroundColor: '#000' }}>
         <ActivityIndicator size="large" color="#a855f7" />
       </View>
     );
@@ -166,41 +171,45 @@ export default function FavoritesScreen() {
   const data = isSearching ? searchResults : favorites;
 
   return (
-    <View className="flex-1 bg-black px-4 pt-4">
-      <Text className="text-white text-2xl font-bold mb-2">⭐ Tus Favoritos</Text>
+    <View style={{ flex: 1, backgroundColor: '#000', paddingHorizontal: 16, paddingTop: 16 }}>
+      <Text variant="headlineMedium" style={{ color: '#fff', marginBottom: 16, fontWeight: 'bold' }}>
+        ⭐ Tus Favoritos
+      </Text>
 
       {/* Buscar en API */}
-      <TextInput
-        value={searchQuery}
+      <Searchbar
+        placeholder="🔍 Buscar películas o series"
         onChangeText={text => {
           setSearchQuery(text);
           if (text.trim() === '') setSearchResults([]);
         }}
         onSubmitEditing={handleSearch}
-        placeholder="🔍 Buscar películas o series"
-        placeholderTextColor="#aaa"
-        className="bg-zinc-800 text-white px-4 py-2 rounded-lg mb-4"
+        value={searchQuery}
+        style={{ marginBottom: 16, backgroundColor: '#1f1f1f' }}
+        iconColor="#aaa"
+        inputStyle={{ color: '#fff' }}
       />
 
       {searching && (
-        <View className="mb-4 items-center">
+        <View style={{ marginBottom: 16, alignItems: 'center' }}>
           <ActivityIndicator size="small" color="#a855f7" />
-          <Text className="text-zinc-400 mt-1 text-sm">Buscando...</Text>
+          <Text style={{ color: '#666', marginTop: 4, fontSize: 12 }}>Buscando...</Text>
         </View>
       )}
 
       {/* Buscar localmente */}
       {!isSearching && (
-        <TextInput
-          value={localSearchQuery}
+        <Searchbar
+          placeholder="📁 Buscar en favoritos"
           onChangeText={text => {
             setLocalSearchQuery(text);
             setFavoritesPage(0);
             fetchFavorites(text, 0);
           }}
-          placeholder="📁 Buscar en favoritos"
-          placeholderTextColor="#aaa"
-          className="bg-zinc-800 text-white px-4 py-2 rounded-lg mb-4"
+          value={localSearchQuery}
+          style={{ marginBottom: 16, backgroundColor: '#1f1f1f' }}
+          iconColor="#aaa"
+          inputStyle={{ color: '#fff' }}
         />
       )}
 
@@ -229,7 +238,7 @@ export default function FavoritesScreen() {
         }}
         ListFooterComponent={
           !isSearching && loadingMore ? (
-            <View className="py-4">
+            <View style={{ paddingVertical: 16 }}>
               <ActivityIndicator color="#a855f7" />
             </View>
           ) : null
@@ -244,90 +253,106 @@ export default function FavoritesScreen() {
           const isRemoving = removingId === tmdbId;
 
           return (
-            <View className="mb-6 w-[48%]">
-              {posterUrl ? (
-                <Image
-                  source={{ uri: posterUrl }}
-                  className="w-full h-56 rounded-xl mb-2"
-                  resizeMode="cover"
-                />
-              ) : (
-                <View className="w-full h-56 rounded-xl mb-2 bg-zinc-700 justify-center items-center">
-                  <Text className="text-white text-sm text-center px-2">Sin póster</Text>
+            <Card style={{ 
+              width: '48%', 
+              marginBottom: 24, 
+              backgroundColor: '#1f1f1f',
+              borderRadius: 12
+            }}>
+              <Card.Cover
+                source={posterUrl ? { uri: posterUrl } : undefined}
+                style={{ height: 224, borderRadius: 12 }}
+                resizeMode="cover"
+              />
+              {!posterUrl && (
+                <View style={{ 
+                  height: 224, 
+                  borderRadius: 12, 
+                  backgroundColor: '#333', 
+                  justifyContent: 'center', 
+                  alignItems: 'center' 
+                }}>
+                  <Text style={{ color: '#fff', fontSize: 12, textAlign: 'center', paddingHorizontal: 8 }}>
+                    Sin póster
+                  </Text>
                 </View>
               )}
 
-              <Text className="text-white font-semibold text-sm mb-2 text-center">{title}</Text>
+              <Card.Content style={{ padding: 12 }}>
+                <Text 
+                  variant="titleSmall" 
+                  style={{ 
+                    color: '#fff', 
+                    fontWeight: '600', 
+                    marginBottom: 8, 
+                    textAlign: 'center' 
+                  }}
+                  numberOfLines={2}
+                >
+                  {title}
+                </Text>
 
-              {isSearching ? (
-                <TouchableOpacity
-                  disabled={isAdding}
-                  onPress={() => handleAddFavorite(tmdbId, mediaType, title)}
-                  className={`px-3 py-1 rounded-full self-center flex-row items-center space-x-2 ${
-                    isAdding ? 'bg-zinc-700' : 'bg-purple-600'
-                  }`}
-                >
-                  {isAdding ? (
-                    <ActivityIndicator size="small" color="white" />
-                  ) : (
-                    <>
-                      <Feather name="star" size={16} color="white" />
-                      <Text className="text-white text-sm">+ Favorito</Text>
-                    </>
-                  )}
-                </TouchableOpacity>
-              ) : (
-                <TouchableOpacity
-                  disabled={isRemoving}
-                  onPress={() => setConfirmDeleteItem(item)}
-                  className={`px-3 py-1 rounded-full self-center flex-row items-center space-x-2 ${
-                    isRemoving ? 'bg-zinc-700' : 'bg-red-600'
-                  }`}
-                >
-                  {isRemoving ? (
-                    <ActivityIndicator size="small" color="white" />
-                  ) : (
-                    <>
-                      <Feather name="trash-2" size={16} color="white" />
-                      <Text className="text-white text-sm">Quitar</Text>
-                    </>
-                  )}
-                </TouchableOpacity>
-              )}
-            </View>
+                {isSearching ? (
+                  <Button
+                    mode="contained"
+                    onPress={() => handleAddFavorite(tmdbId, mediaType, title)}
+                    disabled={isAdding}
+                    loading={isAdding}
+                    icon="star"
+                    style={{ borderRadius: 20 }}
+                    contentStyle={{ paddingVertical: 4 }}
+                    labelStyle={{ fontSize: 12 }}
+                  >
+                    + Favorito
+                  </Button>
+                ) : (
+                  <Button
+                    mode="contained"
+                    onPress={() => setConfirmDeleteItem(item)}
+                    disabled={isRemoving}
+                    loading={isRemoving}
+                    icon="delete"
+                    style={{ backgroundColor: '#dc2626', borderRadius: 20 }}
+                    contentStyle={{ paddingVertical: 4 }}
+                    labelStyle={{ fontSize: 12 }}
+                  >
+                    Quitar
+                  </Button>
+                )}
+              </Card.Content>
+            </Card>
           );
         }}
       />
 
-      {/* Modal de confirmación */}
-      {confirmDeleteItem && (
-        <Modal transparent animationType="fade" visible>
-          <View className="flex-1 justify-center items-center bg-black bg-opacity-70 px-6">
-            <View className="bg-white rounded-2xl p-6 w-full">
-              <Text className="text-lg font-bold text-black mb-4 text-center">
-                ¿Quitar "{confirmDeleteItem.tmdb?.title || confirmDeleteItem.title}" de tus favoritos?
-              </Text>
-              <View className="flex-row justify-end gap-4">
-                <TouchableOpacity
-                  onPress={() => setConfirmDeleteItem(null)}
-                  className="bg-zinc-300 px-4 py-2 rounded-full"
-                >
-                  <Text className="text-black font-semibold">Cancelar</Text>
-                </TouchableOpacity>
-                <TouchableOpacity
-                  onPress={() => {
-                    handleRemoveFavorite(confirmDeleteItem.tmdb?.id || confirmDeleteItem.id);
-                    setConfirmDeleteItem(null);
-                  }}
-                  className="bg-red-600 px-4 py-2 rounded-full"
-                >
-                  <Text className="text-white font-semibold">Eliminar</Text>
-                </TouchableOpacity>
-              </View>
-            </View>
-          </View>
-        </Modal>
-      )}
+      {/* Dialog de confirmación */}
+      <Portal>
+        <Dialog
+          visible={confirmDeleteItem !== null}
+          onDismiss={() => setConfirmDeleteItem(null)}
+        >
+          <Dialog.Title>Confirmar eliminación</Dialog.Title>
+          <Dialog.Content>
+            <Text variant="bodyMedium">
+              ¿Quitar "{confirmDeleteItem?.tmdb?.title || confirmDeleteItem?.title}" de tus favoritos?
+            </Text>
+          </Dialog.Content>
+          <Dialog.Actions>
+            <Button onPress={() => setConfirmDeleteItem(null)}>
+              Cancelar
+            </Button>
+            <Button 
+              onPress={() => {
+                handleRemoveFavorite(confirmDeleteItem?.tmdb?.id || confirmDeleteItem?.id);
+                setConfirmDeleteItem(null);
+              }}
+              textColor="#dc2626"
+            >
+              Eliminar
+            </Button>
+          </Dialog.Actions>
+        </Dialog>
+      </Portal>
     </View>
   );
 }

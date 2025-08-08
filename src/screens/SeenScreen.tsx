@@ -1,16 +1,22 @@
 import React, { useCallback, useEffect, useState } from 'react';
 import {
   View,
-  Text,
   FlatList,
   Image,
   ActivityIndicator,
-  TextInput,
-  TouchableOpacity,
   ScrollView,
   RefreshControl,
-  Modal,
 } from 'react-native';
+import { 
+  Text, 
+  Searchbar, 
+  Card, 
+  Button, 
+  Portal, 
+  Dialog,
+  TextInput,
+  Chip
+} from 'react-native-paper';
 import AsyncStorage from '@react-native-async-storage/async-storage';
 import axios from 'axios';
 import { API_URL } from '@env';
@@ -242,29 +248,30 @@ export default function SeenScreen() {
 
   if (loading && !seen.length) {
     return (
-      <View className="flex-1 justify-center items-center bg-black">
+      <View style={{ flex: 1, justifyContent: 'center', alignItems: 'center', backgroundColor: '#000' }}>
         <ActivityIndicator color="#a855f7" size="large" />
       </View>
     );
   }
 
   return (
-    <View className="flex-1 bg-black px-4 pt-10">
-      <Text className="text-white text-2xl font-bold mb-4">
+    <View style={{ flex: 1, backgroundColor: '#000', paddingHorizontal: 16, paddingTop: 40 }}>
+      <Text variant="headlineMedium" style={{ color: '#fff', marginBottom: 16, fontWeight: 'bold' }}>
         👁️‍🗨️ Vistos recientemente
       </Text>
 
-      <TextInput
-        value={searchQuery}
+      <Searchbar
+        placeholder="Buscar entre tus vistos"
         onChangeText={text => setSearchQuery(text)}
         onSubmitEditing={() => fetchSeenAndRatings(true)}
-        placeholder="Buscar entre tus vistos"
-        placeholderTextColor="#aaa"
-        className="bg-zinc-800 text-white px-4 py-2 rounded-lg mb-4"
+        value={searchQuery}
+        style={{ marginBottom: 16, backgroundColor: '#1f1f1f' }}
+        iconColor="#aaa"
+        inputStyle={{ color: '#fff' }}
       />
 
       {seen.length === 0 ? (
-        <Text className="text-zinc-400 text-center mt-10">
+        <Text style={{ color: '#666', textAlign: 'center', marginTop: 40 }}>
           Aún no has marcado ítems como vistos.
         </Text>
       ) : (
@@ -289,91 +296,116 @@ export default function SeenScreen() {
           }}
           ListFooterComponent={
             loadingMore ? (
-              <View className="py-4">
+              <View style={{ paddingVertical: 16 }}>
                 <ActivityIndicator color="#a855f7" />
               </View>
             ) : null
           }
           renderItem={({ item }) => (
-            <View className="mb-6 w-[48%]">
-              {item.tmdb?.posterUrl ? (
-                <Image
-                  source={{ uri: item.tmdb.posterUrl }}  
-                  className="w-full h-56 rounded-xl mb-2"
-                  resizeMode="cover"
-                />
-              ) : (
-                <View className="w-full h-56 bg-zinc-700 rounded-xl mb-2 justify-center items-center">
-                  <Text className="text-white text-xs px-2 text-center">
+            <Card style={{ 
+              width: '48%', 
+              marginBottom: 24, 
+              backgroundColor: '#1f1f1f',
+              borderRadius: 12
+            }}>
+              <Card.Cover
+                source={item.tmdb?.posterUrl ? { uri: item.tmdb.posterUrl } : undefined}
+                style={{ height: 224, borderRadius: 12 }}
+                resizeMode="cover"
+              />
+              {!item.tmdb?.posterUrl && (
+                <View style={{ 
+                  height: 224, 
+                  borderRadius: 12, 
+                  backgroundColor: '#333', 
+                  justifyContent: 'center', 
+                  alignItems: 'center' 
+                }}>
+                  <Text style={{ color: '#fff', fontSize: 12, textAlign: 'center', paddingHorizontal: 8 }}>
                     Sin póster
                   </Text>
                 </View>
               )}
 
-              <Text className="text-white text-sm font-semibold mb-1 text-center">
-                {item.tmdb?.title || 'Sin título'}
-              </Text>
-
-              <View className="flex-row justify-center gap-2 mb-1">
-                <Text
-                  className={`text-xs px-2 py-0.5 rounded-full ${
-                    item.tmdb?.mediaType === 'movie'
-                      ? 'bg-indigo-600'
-                      : 'bg-green-600'
-                  } text-white`}
+              <Card.Content style={{ padding: 12 }}>
+                <Text 
+                  variant="titleSmall" 
+                  style={{ 
+                    color: '#fff', 
+                    fontWeight: '600', 
+                    marginBottom: 8, 
+                    textAlign: 'center' 
+                  }}
+                  numberOfLines={2}
                 >
-                  {(item.tmdb?.mediaType || 'N/A').toUpperCase()}
+                  {item.tmdb?.title || 'Sin título'}
                 </Text>
-              </View>
 
-              <TouchableOpacity
-                className={`px-3 py-1 rounded-full mx-auto ${
-                  item.alreadyRated ? 'bg-purple-900' : 'bg-purple-600'
-                }`}
-                onPress={() => handleOpenModal(item)}
-              >
-                <Text className="text-white text-sm">
-                  {item.alreadyRated ? '✏️ Editar evaluación' : '⭐ Evaluar'}
-                </Text>
-              </TouchableOpacity>
+                <View style={{ alignItems: 'center', marginBottom: 8 }}>
+                  <Chip
+                    mode="outlined"
+                    style={{ 
+                      backgroundColor: item.tmdb?.mediaType === 'movie' ? '#4f46e5' : '#10b981',
+                      borderColor: item.tmdb?.mediaType === 'movie' ? '#4f46e5' : '#10b981'
+                    }}
+                    textStyle={{ color: '#fff', fontSize: 10 }}
+                  >
+                    {(item.tmdb?.mediaType || 'N/A').toUpperCase()}
+                  </Chip>
+                </View>
 
-              <TouchableOpacity
-                onPress={() => setConfirmDeleteItem(item)}
-                className="mt-2 px-3 py-1 rounded-full mx-auto bg-red-600"
-              >
-                <Text className="text-white text-sm">
-                  🗑️ Quitar de vistos
-                </Text>
-              </TouchableOpacity>
-            </View>
+                <Button
+                  mode="contained"
+                  onPress={() => handleOpenModal(item)}
+                  style={{ 
+                    backgroundColor: item.alreadyRated ? '#7c3aed' : '#a855f7',
+                    borderRadius: 20,
+                    marginBottom: 8
+                  }}
+                  contentStyle={{ paddingVertical: 4 }}
+                  labelStyle={{ fontSize: 12 }}
+                  icon={item.alreadyRated ? "pencil" : "star"}
+                >
+                  {item.alreadyRated ? 'Editar evaluación' : 'Evaluar'}
+                </Button>
+
+                <Button
+                  mode="contained"
+                  onPress={() => setConfirmDeleteItem(item)}
+                  style={{ backgroundColor: '#dc2626', borderRadius: 20 }}
+                  contentStyle={{ paddingVertical: 4 }}
+                  labelStyle={{ fontSize: 12 }}
+                  icon="delete"
+                >
+                  Quitar de vistos
+                </Button>
+              </Card.Content>
+            </Card>
           )}
         />
       )}
 
-      {/* Modal de puntuación */}
-      {ratingModalItem && (
-        <View className="absolute inset-0 bg-black bg-opacity-80 justify-center items-center px-4">
-          <ScrollView
-            className="bg-white rounded-2xl w-full"
-            contentContainerStyle={{
-              padding: 24,
-              justifyContent: 'center',
-              alignItems: 'center',
-            }}
-            style={{ maxHeight: '85%' }}
-          >
-            <Text className="text-black text-2xl font-bold mb-4 text-center">
-              {ratingModalItem.tmdb?.title || 'Sin título'}
-            </Text>
+      {/* Dialog de puntuación */}
+      <Portal>
+        <Dialog
+          visible={ratingModalItem !== null}
+          onDismiss={() => setRatingModalItem(null)}
+          style={{ backgroundColor: '#fff' }}
+        >
+          <Dialog.Title style={{ textAlign: 'center' }}>
+            {ratingModalItem?.tmdb?.title || 'Sin título'}
+          </Dialog.Title>
+          <Dialog.Content>
+            <View style={{ alignItems: 'center', marginBottom: 16 }}>
+              <StarRating
+                rating={ratingValue}
+                onChange={setRatingValue}
+                starSize={36}
+                color="#a855f7"
+              />
+            </View>
 
-            <StarRating
-              rating={ratingValue}
-              onChange={setRatingValue}
-              starSize={36}
-              color="#a855f7"
-            />
-
-            <Text className="text-black mt-4 mb-2 w-full">
+            <Text variant="bodyMedium" style={{ marginBottom: 8 }}>
               Comentario:
             </Text>
             <TextInput
@@ -381,65 +413,54 @@ export default function SeenScreen() {
               value={comment}
               onChangeText={setComment}
               multiline
-              className="bg-zinc-100 rounded-lg p-3 text-black w-full h-28"
+              numberOfLines={4}
+              mode="outlined"
+              style={{ backgroundColor: '#f3f4f6' }}
             />
+          </Dialog.Content>
+          <Dialog.Actions>
+            <Button onPress={() => setRatingModalItem(null)}>
+              Cancelar
+            </Button>
 
-            <View className="flex-row justify-end w-full mt-6 gap-3 flex-wrap">
-              <TouchableOpacity
-                onPress={() => setRatingModalItem(null)}
-                className="px-4 py-2 bg-zinc-300 rounded-full"
-              >
-                <Text className="text-black font-semibold">Cancelar</Text>
-              </TouchableOpacity>
+            {ratings.find(r => r.tmdbId === ratingModalItem?.tmdbId) && (
+              <Button onPress={handleDeleteRating} textColor="#dc2626">
+                Eliminar
+              </Button>
+            )}
 
-              {ratings.find(r => r.tmdbId === ratingModalItem.tmdbId) && (
-                <TouchableOpacity
-                  onPress={handleDeleteRating}
-                  className="px-4 py-2 bg-red-600 rounded-full"
-                >
-                  <Text className="text-white font-semibold">
-                    Eliminar
-                  </Text>
-                </TouchableOpacity>
-              )}
+            <Button onPress={handleSendRating} mode="contained">
+              Enviar
+            </Button>
+          </Dialog.Actions>
+        </Dialog>
+      </Portal>
 
-              <TouchableOpacity
-                onPress={handleSendRating}
-                className="px-4 py-2 bg-purple-600 rounded-full"
-              >
-                <Text className="text-white font-semibold">Enviar</Text>
-              </TouchableOpacity>
-            </View>
-          </ScrollView>
-        </View>
-      )}
-
-      {/* Modal de confirmación para eliminar */}
-      {confirmDeleteItem && (
-        <Modal transparent animationType="fade" visible>
-          <View className="flex-1 justify-center items-center bg-black bg-opacity-70 px-6">
-            <View className="bg-white rounded-2xl p-6 w-full">
-              <Text className="text-lg font-bold text-black mb-4 text-center">
-                ¿Quitar "{confirmDeleteItem.tmdb?.title}" de tus vistos?
-              </Text>
-              <View className="flex-row justify-end gap-4">
-                <TouchableOpacity
-                  onPress={() => setConfirmDeleteItem(null)}
-                  className="bg-zinc-300 px-4 py-2 rounded-full"
-                >
-                  <Text className="text-black font-semibold">Cancelar</Text>
-                </TouchableOpacity>
-                <TouchableOpacity
-                  onPress={() => handleRemoveSeen(confirmDeleteItem.tmdbId)}
-                  className="bg-red-600 px-4 py-2 rounded-full"
-                >
-                  <Text className="text-white font-semibold">Eliminar</Text>
-                </TouchableOpacity>
-              </View>
-            </View>
-          </View>
-        </Modal>
-      )}
+      {/* Dialog de confirmación para eliminar */}
+      <Portal>
+        <Dialog
+          visible={confirmDeleteItem !== null}
+          onDismiss={() => setConfirmDeleteItem(null)}
+        >
+          <Dialog.Title>Confirmar eliminación</Dialog.Title>
+          <Dialog.Content>
+            <Text variant="bodyMedium">
+              ¿Quitar "{confirmDeleteItem?.tmdb?.title}" de tus vistos?
+            </Text>
+          </Dialog.Content>
+          <Dialog.Actions>
+            <Button onPress={() => setConfirmDeleteItem(null)}>
+              Cancelar
+            </Button>
+            <Button 
+              onPress={() => handleRemoveSeen(confirmDeleteItem?.tmdbId!)}
+              textColor="#dc2626"
+            >
+              Eliminar
+            </Button>
+          </Dialog.Actions>
+        </Dialog>
+      </Portal>
     </View>
   );
 }

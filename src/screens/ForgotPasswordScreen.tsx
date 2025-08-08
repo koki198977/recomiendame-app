@@ -1,12 +1,14 @@
 import React, { useState } from 'react';
 import {
   View,
-  Text,
-  TextInput,
-  TouchableOpacity,
   Keyboard,
-  ActivityIndicator,
 } from 'react-native';
+import { 
+  Text, 
+  TextInput, 
+  Button, 
+  Card 
+} from 'react-native-paper';
 import axios from 'axios';
 import { API_URL } from '@env';
 import Toast from 'react-native-toast-message';
@@ -16,7 +18,6 @@ export default function ForgotPasswordScreen({ navigation }: any) {
   const [loading, setLoading] = useState(false);
 
   const handleSendReset = async () => {
-    // Oculta el teclado
     Keyboard.dismiss();
     setLoading(true);
 
@@ -40,47 +41,65 @@ export default function ForgotPasswordScreen({ navigation }: any) {
   };
 
   return (
-    <View className="flex-1 bg-zinc-950 px-6 justify-center">
-      <Text className="text-white text-3xl font-semibold mb-8 text-center">
+    <View style={{ 
+      flex: 1, 
+      backgroundColor: '#000', 
+      paddingHorizontal: 24, 
+      justifyContent: 'center' 
+    }}>
+      <Text 
+        variant="headlineMedium" 
+        style={{ 
+          color: '#fff', 
+          marginBottom: 32, 
+          textAlign: 'center',
+          fontWeight: '600'
+        }}
+      >
         Olvidé mi contraseña
       </Text>
-      <View className="w-full bg-zinc-900 rounded-2xl p-6 space-y-4 shadow-lg">
-        <TextInput
-          placeholder="Correo electrónico"
-          placeholderTextColor="#aaa"
-          value={email}
-          onChangeText={setEmail}
-          autoCapitalize="none"
-          keyboardType="email-address"
-          className="bg-zinc-800 text-white rounded-xl px-4 py-3"
-        />
+      
+      <Card style={{ backgroundColor: '#1f1f1f', borderRadius: 16 }}>
+        <Card.Content style={{ padding: 24 }}>
+          <TextInput
+            label="Correo electrónico"
+            value={email}
+            onChangeText={setEmail}
+            mode="outlined"
+            autoCapitalize="none"
+            keyboardType="email-address"
+            style={{ marginBottom: 24 }}
+            theme={{ 
+              colors: { 
+                onSurfaceVariant: '#aaa',
+                outline: '#444'
+              } 
+            }}
+          />
 
-        <TouchableOpacity
-          onPress={handleSendReset}
-          disabled={loading}
-          className={`rounded-xl py-3 items-center ${
-            loading ? 'bg-purple-400' : 'bg-purple-600'
-          }`}
-        >
-          {loading ? (
-            <ActivityIndicator size="small" color="#fff" />
-          ) : (
-            <Text className="text-white font-bold text-base">
-              Enviar enlace
-            </Text>
-          )}
-        </TouchableOpacity>
+          <Button
+            mode="contained"
+            onPress={handleSendReset}
+            loading={loading}
+            disabled={loading}
+            style={{ borderRadius: 12, marginBottom: 16 }}
+            contentStyle={{ paddingVertical: 8 }}
+          >
+            Enviar enlace
+          </Button>
 
-        <TouchableOpacity
-          onPress={() => navigation.goBack()}
-          disabled={loading}
-          className="mt-2 items-center"
-        >
-          <Text className={`text-purple-600 ${loading ? 'opacity-50' : ''}`}>
+          <Button
+            mode="text"
+            onPress={() => navigation.goBack()}
+            disabled={loading}
+            textColor="#a855f7"
+            compact
+          >
             Volver al inicio de sesión
-          </Text>
-        </TouchableOpacity>
-      </View>
+          </Button>
+        </Card.Content>
+      </Card>
+      
       <Toast />
     </View>
   );

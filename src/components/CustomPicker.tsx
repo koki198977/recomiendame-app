@@ -1,12 +1,19 @@
 import React, { useState } from 'react';
 import {
   View,
-  Text,
   Modal,
   TouchableOpacity,
   FlatList,
   StyleSheet,
 } from 'react-native';
+import { 
+  Text, 
+  Button, 
+  List, 
+  Portal, 
+  Dialog, 
+  Searchbar 
+} from 'react-native-paper';
 import { Ionicons } from '@expo/vector-icons';
 
 interface Option {
@@ -23,13 +30,19 @@ interface Props {
 
 export default function CustomPicker({ label, value, options, onChange }: Props) {
   const [visible, setVisible] = useState(false);
+  const [searchQuery, setSearchQuery] = useState('');
 
   const selectedLabel = options.find((opt) => opt.value === value)?.label;
+
+  const filteredOptions = options.filter(option =>
+    option.label.toLowerCase().includes(searchQuery.toLowerCase())
+  );
 
   const handleOptionPress = (selectedValue: string) => {
     console.log('CustomPicker: Option selected:', selectedValue, 'for label:', label);
     onChange(selectedValue);
     setVisible(false);
+    setSearchQuery('');
   };
 
   const handleOpenPicker = () => {
@@ -40,105 +53,87 @@ export default function CustomPicker({ label, value, options, onChange }: Props)
   const handleClosePicker = () => {
     console.log('CustomPicker: Closing picker for:', label);
     setVisible(false);
+    setSearchQuery('');
   };
 
   return (
     <View style={styles.container}>
-      <Text style={styles.label}>{label}</Text>
-      <TouchableOpacity
+      <Text variant="labelMedium" style={styles.label}>{label}</Text>
+      <Button
+        mode="outlined"
         onPress={handleOpenPicker}
-        style={styles.input}
-        activeOpacity={0.7}
+        style={styles.button}
+        contentStyle={styles.buttonContent}
+        icon={({ size, color }) => (
+          <Ionicons name="chevron-down" size={size} color={color} />
+        )}
       >
-        <Text style={styles.inputText}>
-          {selectedLabel || `Selecciona ${label.toLowerCase()}`}
-        </Text>
-        <Ionicons name="chevron-down" size={18} color="#aaa" />
-      </TouchableOpacity>
+        {selectedLabel || `Selecciona ${label.toLowerCase()}`}
+      </Button>
 
-      <Modal 
-        visible={visible} 
-        transparent 
-        animationType="slide"
-      >
-        <View style={styles.modalBackground}>
-          <View style={styles.modalContent}>
-            <View style={styles.modalHeader}>
-              <Text style={styles.modalTitle}>{label}</Text>
-              <TouchableOpacity onPress={handleClosePicker}>
-                <Ionicons name="close" size={24} color="#fff" />
-              </TouchableOpacity>
-            </View>
-            
+      <Portal>
+        <Dialog visible={visible} onDismiss={handleClosePicker} style={styles.dialog}>
+          <Dialog.Title>{label}</Dialog.Title>
+          <Dialog.Content>
+            <Searchbar
+              placeholder="Buscar..."
+              onChangeText={setSearchQuery}
+              value={searchQuery}
+              style={styles.searchbar}
+            />
             <FlatList
-              data={options}
+              data={filteredOptions}
               keyExtractor={(item) => item.value}
               renderItem={({ item }) => (
-                <TouchableOpacity
+                <List.Item
+                  title={item.label}
                   onPress={() => handleOptionPress(item.value)}
-                  style={styles.option}
-                  activeOpacity={0.7}
-                >
-                  <Text style={styles.optionText}>{item.label}</Text>
-                </TouchableOpacity>
+                  style={styles.listItem}
+                  titleStyle={styles.listItemTitle}
+                />
               )}
               showsVerticalScrollIndicator={false}
+              style={styles.list}
             />
-          </View>
-        </View>
-      </Modal>
+          </Dialog.Content>
+          <Dialog.Actions>
+            <Button onPress={handleClosePicker}>Cancelar</Button>
+          </Dialog.Actions>
+        </Dialog>
+      </Portal>
     </View>
   );
 }
 
 const styles = StyleSheet.create({
-  container: { marginBottom: 16 },
-  label: { color: 'white', marginBottom: 4 },
-  input: {
+  container: { 
+    marginBottom: 16 
+  },
+  label: { 
+    marginBottom: 8,
+    color: '#ffffff'
+  },
+  button: {
+    borderColor: '#444',
     backgroundColor: '#27272a',
-    padding: 12,
-    borderRadius: 12,
-    flexDirection: 'row',
+  },
+  buttonContent: {
     justifyContent: 'space-between',
-    alignItems: 'center',
   },
-  inputText: { color: 'white' },
-  modalBackground: {
-    flex: 1,
-    backgroundColor: 'rgba(0,0,0,0.9)',
-    justifyContent: 'center',
-    alignItems: 'center',
-    padding: 20,
-  },
-  modalContent: {
+  dialog: {
     backgroundColor: '#1e1e1e',
-    borderRadius: 10,
-    width: '90%',
-    maxHeight: '80%',
-    paddingVertical: 10,
   },
-  modalHeader: {
-    flexDirection: 'row',
-    justifyContent: 'space-between',
-    alignItems: 'center',
-    paddingHorizontal: 16,
-    paddingVertical: 8,
-    borderBottomColor: '#333',
-    borderBottomWidth: 1,
+  searchbar: {
+    marginBottom: 8,
+    backgroundColor: '#27272a',
   },
-  modalTitle: {
-    color: 'white',
-    fontSize: 18,
-    fontWeight: 'bold',
+  list: {
+    maxHeight: 300,
   },
-  option: {
-    paddingVertical: 12,
-    paddingHorizontal: 16,
-    borderBottomColor: '#333',
-    borderBottomWidth: 1,
+  listItem: {
+    backgroundColor: 'transparent',
   },
-  optionText: {
-    color: 'white',
-    fontSize: 16,
+  listItemTitle: {
+    color: '#ffffff',
   },
 });

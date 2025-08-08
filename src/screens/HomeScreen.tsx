@@ -3,7 +3,6 @@
 import React, { useEffect, useState, useCallback } from 'react';
 import {
   View,
-  Text,
   ScrollView,
   ActivityIndicator,
   Image,
@@ -14,6 +13,16 @@ import {
   KeyboardAvoidingView,
   Platform,
 } from 'react-native';
+import { 
+  Text, 
+  Card, 
+  Chip, 
+  Button, 
+  Portal, 
+  Modal, 
+  Divider,
+  ProgressBar
+} from 'react-native-paper';
 import AsyncStorage from '@react-native-async-storage/async-storage';
 import axios from 'axios';
 import Toast from 'react-native-toast-message';
@@ -100,73 +109,88 @@ export default function HomeScreen() {
 
   if (loading && !refreshing) {
     return (
-      <View className="flex-1 justify-center items-center bg-black">
+      <View style={{ flex: 1, justifyContent: 'center', alignItems: 'center', backgroundColor: '#000' }}>
         <ActivityIndicator color="white" size="large" />
       </View>
     );
   }
 
   return (
-    <View className="flex-1 bg-black">
+    <View style={{ flex: 1, backgroundColor: '#000' }}>
       <ScrollView
-        className="px-4 pt-10"
+        style={{ paddingHorizontal: 16, paddingTop: 40 }}
         refreshControl={
           <RefreshControl refreshing={refreshing} onRefresh={onRefresh} tintColor="#a855f7" />
         }
+        showsVerticalScrollIndicator={false}
       >
-        <Text className="text-white text-2xl font-bold mb-4">Resumen</Text>
+        <Text variant="headlineMedium" style={{ color: '#fff', marginBottom: 16, fontWeight: 'bold' }}>
+          Resumen
+        </Text>
 
         {stats ? (
           <>
             {/* --- Estadísticas --- */}
-            <View className="bg-zinc-900 p-5 rounded-2xl mb-6 flex-row justify-between items-center">
-              <View>
-                <View className="flex-row items-center mb-3">
-                  <MaterialIcons name="insights" size={20} color="#9f43e3" />
-                  <Text className="text-white ml-2">Vistos: {stats.seenTotal}</Text>
+            <Card style={{ backgroundColor: '#1f1f1f', marginBottom: 24 }}>
+              <Card.Content style={{ padding: 20 }}>
+                <View style={{ flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center' }}>
+                  <View>
+                    <View style={{ flexDirection: 'row', alignItems: 'center', marginBottom: 12 }}>
+                      <MaterialIcons name="insights" size={20} color="#9f43e3" />
+                      <Text style={{ color: '#fff', marginLeft: 8 }}>
+                        Vistos: {stats.seenTotal}
+                      </Text>
+                    </View>
+                    <View style={{ flexDirection: 'row', alignItems: 'center', marginBottom: 12 }}>
+                      <FontAwesome name="star" size={20} color="gold" />
+                      <Text style={{ color: '#fff', marginLeft: 8 }}>
+                        Favoritos: {stats.favoriteTotal}
+                      </Text>
+                    </View>
+                    <View style={{ flexDirection: 'row', alignItems: 'center' }}>
+                      <Entypo name="video" size={20} color="#61dafb" />
+                      <Text style={{ color: '#fff', marginLeft: 8 }}>
+                        Puntuaciones: {stats.ratingsTotal}
+                      </Text>
+                    </View>
+                  </View>
+                  <View style={{ alignItems: 'center' }}>
+                    {stats.averageRating != null ? (
+                      <Progress.Circle
+                        size={80}
+                        progress={stats.averageRating / 5}
+                        showsText
+                        formatText={() => stats.averageRating.toFixed(2)}
+                        thickness={8}
+                        color="#4f46e5"
+                        unfilledColor="#333"
+                        borderWidth={0}
+                      />
+                    ) : (
+                      <Text style={{ color: '#fff', fontSize: 24, fontWeight: 'bold' }}>-</Text>
+                    )}
+                    <Text style={{ color: '#666', fontSize: 12, marginTop: 4 }}>Promedio</Text>
+                  </View>
                 </View>
-                <View className="flex-row items-center mb-3">
-                  <FontAwesome name="star" size={20} color="gold" />
-                  <Text className="text-white ml-2">Favoritos: {stats.favoriteTotal}</Text>
-                </View>
-                <View className="flex-row items-center">
-                  <Entypo name="video" size={20} color="#61dafb" />
-                  <Text className="text-white ml-2">Puntuaciones: {stats.ratingsTotal}</Text>
-                </View>
-              </View>
-              <View className="items-center">
-                {stats.averageRating != null ? (
-                  <Progress.Circle
-                    size={80}
-                    progress={stats.averageRating / 5}
-                    showsText
-                    formatText={() => stats.averageRating.toFixed(2)}
-                    thickness={8}
-                    color="#4f46e5"
-                    unfilledColor="#333"
-                    borderWidth={0}
-                  />
-                ) : (
-                  <Text className="text-white text-2xl font-bold">-</Text>
-                )}
-                <Text className="text-zinc-400 text-sm mt-1">Promedio</Text>
-              </View>
-            </View>
+              </Card.Content>
+            </Card>
 
             {/* --- Géneros favoritos --- */}
             {stats.favoriteGenres?.length > 0 && (
               <>
-                <Text className="text-white text-xl font-semibold mb-2">
+                <Text variant="titleLarge" style={{ color: '#fff', marginBottom: 8, fontWeight: '600' }}>
                   🎭 Géneros favoritos
                 </Text>
-                <View className="flex-row flex-wrap gap-2 mb-6">
+                <View style={{ flexDirection: 'row', flexWrap: 'wrap', gap: 8, marginBottom: 24 }}>
                   {stats.favoriteGenres.map((g: string) => (
-                    <Text
+                    <Chip
                       key={g}
-                      className="text-white bg-purple-700 px-3 py-1 rounded-full text-sm"
+                      mode="outlined"
+                      style={{ backgroundColor: '#a855f7' }}
+                      textStyle={{ color: '#fff' }}
                     >
                       {g}
-                    </Text>
+                    </Chip>
                   ))}
                 </View>
               </>
@@ -175,7 +199,7 @@ export default function HomeScreen() {
             {/* --- Recomendaciones recientes --- */}
             {stats.recentRecommendations?.length > 0 && (
               <>
-                <Text className="text-white text-xl font-semibold mb-2">
+                <Text variant="titleLarge" style={{ color: '#fff', marginBottom: 8, fontWeight: '600' }}>
                   🤖 Recomendaciones recientes
                 </Text>
                 <FlatList
@@ -183,18 +207,18 @@ export default function HomeScreen() {
                   data={stats.recentRecommendations}
                   keyExtractor={(item: Recommendation) => item.tmdbId.toString()}
                   showsHorizontalScrollIndicator={false}
-                  className="mb-10 px-1"
+                  style={{ marginBottom: 40, paddingLeft: 4 }}
                   renderItem={({ item }: { item: Recommendation }) => (
                     <TouchableOpacity
                       onPress={() => setSelectedItem(item)}
-                      className="mr-4 w-40"
+                      style={{ marginRight: 16, width: 160 }}
                     >
                       <Image
                         source={{ uri: item.posterUrl }}
-                        className="w-full h-60 rounded-xl mb-2"
+                        style={{ width: '100%', height: 240, borderRadius: 12, marginBottom: 8 }}
                         resizeMode="cover"
                       />
-                      <Text className="text-white font-bold text-sm mb-1">
+                      <Text style={{ color: '#fff', fontWeight: 'bold', fontSize: 14, marginBottom: 4 }}>
                         {item.title}
                       </Text>
                     </TouchableOpacity>
@@ -204,106 +228,113 @@ export default function HomeScreen() {
             )}
           </>
         ) : (
-          <Text className="text-zinc-400 text-center">
+          <Text style={{ color: '#666', textAlign: 'center' }}>
             No se pudieron cargar estadísticas. Intenta nuevamente.
           </Text>
         )}
       </ScrollView>
 
-      {/* --- Popup de detalle --- */}
-      {selectedItem && (
-        <View className="absolute inset-0 bg-black bg-opacity-80 justify-center items-center px-6">
-          <KeyboardAvoidingView
-            behavior={Platform.OS === 'ios' ? 'padding' : 'height'}
-            className="w-full"
-          >
-            <View
-              className="bg-white rounded-2xl overflow-hidden"
-              style={{ maxHeight: '85%' }}
+      {/* --- Modal de detalle --- */}
+      <Portal>
+        <Modal
+          visible={selectedItem !== null}
+          onDismiss={() => setSelectedItem(null)}
+          contentContainerStyle={{
+            backgroundColor: '#fff',
+            margin: 20,
+            borderRadius: 16,
+            maxHeight: '85%',
+          }}
+        >
+          {selectedItem && (
+            <ScrollView
+              contentContainerStyle={{ padding: 20 }}
+              showsVerticalScrollIndicator={false}
             >
-              <ScrollView
-                contentContainerStyle={{ padding: 20 }}
-                showsVerticalScrollIndicator={false}
-              >
-                <Text className="text-xl font-bold mb-2 text-black">
-                  {selectedItem.title}
-                </Text>
-                <Text className="text-gray-800 mb-4 text-sm">
-                  {selectedItem.overview}
-                </Text>
+              <Text variant="headlineSmall" style={{ marginBottom: 8, fontWeight: 'bold' }}>
+                {selectedItem.title}
+              </Text>
+              <Text variant="bodyMedium" style={{ marginBottom: 16, color: '#666' }}>
+                {selectedItem.overview}
+              </Text>
 
-                <View className="flex-row justify-around items-center mb-4">
-                  <View className="items-center">
-                    <Text className="text-gray-600 text-xs">⭐ Votos</Text>
-                    <Text className="text-yellow-600 font-bold text-base">
-                      {selectedItem.voteAverage}
-                    </Text>
-                  </View>
-                  <View className="items-center">
-                    <Text className="text-gray-600 text-xs">🔥 Popularidad</Text>
-                    <Text className="text-pink-500 font-bold text-base">
-                      {selectedItem.popularity ?? '-'}
-                    </Text>
-                  </View>
-                  <View className="items-center">
-                    <Text className="text-gray-600 text-xs">🎬 Tipo</Text>
-                    <Text className="text-green-600 font-bold text-base">
-                      {selectedItem.mediaType.toUpperCase()}
-                    </Text>
+              <View style={{ flexDirection: 'row', justifyContent: 'space-around', alignItems: 'center', marginBottom: 16 }}>
+                <View style={{ alignItems: 'center' }}>
+                  <Text variant="labelSmall" style={{ color: '#666' }}>⭐ Votos</Text>
+                  <Text variant="titleMedium" style={{ color: '#f59e0b', fontWeight: 'bold' }}>
+                    {selectedItem.voteAverage}
+                  </Text>
+                </View>
+                <View style={{ alignItems: 'center' }}>
+                  <Text variant="labelSmall" style={{ color: '#666' }}>🔥 Popularidad</Text>
+                  <Text variant="titleMedium" style={{ color: '#ec4899', fontWeight: 'bold' }}>
+                    {selectedItem.popularity ?? '-'}
+                  </Text>
+                </View>
+                <View style={{ alignItems: 'center' }}>
+                  <Text variant="labelSmall" style={{ color: '#666' }}>🎬 Tipo</Text>
+                  <Text variant="titleMedium" style={{ color: '#10b981', fontWeight: 'bold' }}>
+                    {selectedItem.mediaType.toUpperCase()}
+                  </Text>
+                </View>
+              </View>
+
+              {(selectedItem.platforms ?? []).length > 0 && (
+                <View style={{ marginBottom: 16 }}>
+                  <Text variant="titleMedium" style={{ marginBottom: 8, fontWeight: '600' }}>
+                    Disponible en:
+                  </Text>
+                  <View style={{ flexDirection: 'row', flexWrap: 'wrap' }}>
+                    {(selectedItem.platforms ?? []).map((p) => {
+                      const icon = platformIcons[p];
+                      return icon ? (
+                        <View
+                          key={p}
+                          style={{ 
+                            backgroundColor: '#f3f4f6', 
+                            borderRadius: 8, 
+                            marginRight: 8, 
+                            marginBottom: 8, 
+                            padding: 4 
+                          }}
+                        >
+                          <Image
+                            source={icon}
+                            style={{ width: 28, height: 28 }}
+                            resizeMode="contain"
+                          />
+                        </View>
+                      ) : (
+                        <Text key={p} style={{ color: '#666', fontSize: 12, marginRight: 8, marginBottom: 8 }}>
+                          {p}
+                        </Text>
+                      );
+                    })}
                   </View>
                 </View>
+              )}
 
-                {(selectedItem.platforms ?? []).length > 0 && (
-                  <View className="mb-4">
-                    <Text className="text-black font-semibold mb-1">
-                      Disponible en:
-                    </Text>
-                    <View className="flex-row flex-wrap">
-                      {(selectedItem.platforms ?? []).map((p) => {
-                        const icon = platformIcons[p];
-                        return icon ? (
-                          <View
-                            key={p}
-                            className="bg-zinc-200 rounded-md mr-2 mb-2 p-1"
-                          >
-                            <Image
-                              source={icon}
-                              style={{ width: 28, height: 28 }}
-                              resizeMode="contain"
-                            />
-                          </View>
-                        ) : (
-                          <Text key={p} className="text-zinc-700 text-sm mr-2 mb-2">
-                            {p}
-                          </Text>
-                        );
-                      })}
-                    </View>
-                  </View>
-                )}
-
-                {selectedItem.trailerUrl && (
-                  <TouchableOpacity
-                    onPress={() => Linking.openURL(selectedItem.trailerUrl!)}
-                    className="bg-purple-600 py-2 rounded-full mb-4"
-                  >
-                    <Text className="text-white text-center font-semibold">
-                      ▶️ Ver tráiler
-                    </Text>
-                  </TouchableOpacity>
-                )}
-
-                <TouchableOpacity
-                  onPress={() => setSelectedItem(null)}
-                  className="bg-gray-300 py-2 rounded-full"
+              {selectedItem.trailerUrl && (
+                <Button
+                  mode="contained"
+                  onPress={() => Linking.openURL(selectedItem.trailerUrl!)}
+                  style={{ marginBottom: 16 }}
+                  icon="play"
                 >
-                  <Text className="text-center font-semibold">Cerrar</Text>
-                </TouchableOpacity>
-              </ScrollView>
-            </View>
-          </KeyboardAvoidingView>
-        </View>
-      )}
+                  Ver tráiler
+                </Button>
+              )}
+
+              <Button
+                mode="outlined"
+                onPress={() => setSelectedItem(null)}
+              >
+                Cerrar
+              </Button>
+            </ScrollView>
+          )}
+        </Modal>
+      </Portal>
     </View>
   );
 }

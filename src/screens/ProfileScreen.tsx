@@ -2,15 +2,23 @@
 import React, { useEffect, useState } from 'react';
 import {
   View,
-  Text,
-  TextInput,
-  TouchableOpacity,
   ScrollView,
   ActivityIndicator,
   Modal,
   Button,
   StyleSheet,
 } from 'react-native';
+import { 
+  Text, 
+  TextInput, 
+  Button as PaperButton, 
+  Card, 
+  Chip, 
+  Avatar,
+  Divider,
+  Portal,
+  Dialog
+} from 'react-native-paper';
 import AsyncStorage from '@react-native-async-storage/async-storage';
 import axios from 'axios';
 import Toast from 'react-native-toast-message';
@@ -156,47 +164,135 @@ export default function ProfileScreen({ navigation }: any) {
 
   if (loading) {
     return (
-      <View className="flex-1 justify-center items-center bg-black">
+      <View style={{ flex: 1, justifyContent: 'center', alignItems: 'center', backgroundColor: '#000' }}>
         <ActivityIndicator color="#a855f7" size="large" />
       </View>
     );
   }
 
   return (
-    <ScrollView className="flex-1 bg-black px-6 pt-10">
+    <ScrollView style={{ flex: 1, backgroundColor: '#000', paddingHorizontal: 24, paddingTop: 40 }}>
       {/* Avatar y email */}
-      <View className="items-center mb-6">
-        <View className="w-28 h-28 rounded-full bg-purple-600 justify-center items-center">
-          <Text className="text-white text-5xl">👤</Text>
-        </View>
-        <Text className="text-white text-lg mt-4">{user.email}</Text>
+      <View style={{ alignItems: 'center', marginBottom: 24 }}>
+        <Avatar.Text 
+          size={112} 
+          label="👤" 
+          style={{ backgroundColor: '#a855f7' }}
+        />
+        <Text variant="titleMedium" style={{ color: '#fff', marginTop: 16 }}>
+          {user.email}
+        </Text>
       </View>
 
-      {/* Nombre */}
-      <Text className="text-white mb-1">Nombre completo</Text>
-      <TextInput
-        className="bg-zinc-800 text-white rounded-xl px-4 py-3 mb-4"
-        value={fullName}
-        onChangeText={setFullName}
-      />
+      <Card style={{ backgroundColor: '#1f1f1f', marginBottom: 16 }}>
+        <Card.Content style={{ padding: 20 }}>
+          <Text variant="titleMedium" style={{ color: '#fff', marginBottom: 16 }}>
+            Información Personal
+          </Text>
 
-      {/* Fecha de nacimiento */}
-      <Text className="text-white mb-1">Fecha de nacimiento</Text>
-      <TouchableOpacity
-        onPress={() => {
-          setTempDate(birthDate ? parseLocalDate(birthDate) : new Date());
-          setShowDatePicker(true);
-        }}
-        className="bg-zinc-800 rounded-xl px-4 py-3 mb-4"
+          {/* Nombre */}
+          <TextInput
+            label="Nombre completo"
+            value={fullName}
+            onChangeText={setFullName}
+            mode="outlined"
+            style={{ marginBottom: 16 }}
+            theme={{ 
+              colors: { 
+                onSurfaceVariant: '#aaa',
+                outline: '#444'
+              } 
+            }}
+          />
+
+          {/* Fecha de nacimiento */}
+          <PaperButton
+            mode="outlined"
+            onPress={() => {
+              setTempDate(birthDate ? parseLocalDate(birthDate) : new Date());
+              setShowDatePicker(true);
+            }}
+            style={{ marginBottom: 16 }}
+            theme={{ 
+              colors: { 
+                outline: '#444'
+              } 
+            }}
+          >
+            {birthDate || 'Selecciona fecha de nacimiento'}
+          </PaperButton>
+
+          {/* País */}
+          <CustomPicker
+            label="País"
+            value={country}
+            onChange={setCountry}
+            options={countryOptions}
+          />
+
+          {/* Idioma */}
+          <CustomPicker
+            label="Idioma"
+            value={language}
+            onChange={setLanguage}
+            options={languageOptions}
+          />
+        </Card.Content>
+      </Card>
+
+      <Card style={{ backgroundColor: '#1f1f1f', marginBottom: 24 }}>
+        <Card.Content style={{ padding: 20 }}>
+          <Text variant="titleMedium" style={{ color: '#fff', marginBottom: 16 }}>
+            Géneros favoritos
+          </Text>
+          <View style={{ flexDirection: 'row', flexWrap: 'wrap', gap: 8 }}>
+            {genres.map((genre) => (
+              <Chip
+                key={genre}
+                selected={favoriteGenres.includes(genre)}
+                onPress={() => toggleGenre(genre)}
+                mode="outlined"
+                style={{ 
+                  backgroundColor: favoriteGenres.includes(genre) ? '#a855f7' : 'transparent',
+                  borderColor: favoriteGenres.includes(genre) ? '#a855f7' : '#444'
+                }}
+                textStyle={{ 
+                  color: favoriteGenres.includes(genre) ? '#fff' : '#fff' 
+                }}
+              >
+                {genre}
+              </Chip>
+            ))}
+          </View>
+        </Card.Content>
+      </Card>
+
+      {/* Guardar y Cerrar sesión */}
+      <PaperButton
+        mode="contained"
+        onPress={handleSave}
+        style={{ marginBottom: 16 }}
+        contentStyle={{ paddingVertical: 8 }}
+        icon="content-save"
       >
-        <Text className="text-white">
-          {birthDate || 'Selecciona fecha de nacimiento'}
-        </Text>
-      </TouchableOpacity>
+        Guardar cambios
+      </PaperButton>
 
-      <Modal visible={showDatePicker} transparent animationType="slide">
-        <View style={styles.modalBackdrop}>
-          <View style={styles.modalContent}>
+      <PaperButton
+        mode="contained"
+        onPress={handleLogout}
+        style={{ backgroundColor: '#dc2626' }}
+        contentStyle={{ paddingVertical: 8 }}
+        icon="logout"
+      >
+        Cerrar sesión
+      </PaperButton>
+
+      {/* Modal para fecha de nacimiento */}
+      <Portal>
+        <Dialog visible={showDatePicker} onDismiss={() => setShowDatePicker(false)}>
+          <Dialog.Title>Fecha de nacimiento</Dialog.Title>
+          <Dialog.Content>
             <DateTimePicker
               value={tempDate}
               mode="date"
@@ -213,98 +309,24 @@ export default function ProfileScreen({ navigation }: any) {
               }}
               style={{ backgroundColor: '#fff' }}
             />
-            <View style={styles.modalButtons}>
-              <Button
-                title="Cancelar"
-                onPress={() => setShowDatePicker(false)}
-              />
-              <Button
-                title="Aceptar"
-                onPress={() => {
-                  // formateo YYYY-MM-DD en hora local
-                  const y = tempDate.getFullYear();
-                  const m = String(tempDate.getMonth() + 1).padStart(2, '0');
-                  const D = String(tempDate.getDate()).padStart(2, '0');
-                  setBirthDate(`${y}-${m}-${D}`);
-                  setShowDatePicker(false);
-                }}
-              />
-            </View>
-          </View>
-        </View>
-      </Modal>
-
-      {/* País */}
-      <CustomPicker
-        label="País"
-        value={country}
-        onChange={setCountry}
-        options={countryOptions}
-      />
-
-      {/* Idioma */}
-      <CustomPicker
-        label="Idioma"
-        value={language}
-        onChange={setLanguage}
-        options={languageOptions}
-      />
-
-      {/* Géneros favoritos */}
-      <Text className="text-white mb-2">Géneros favoritos</Text>
-      <View className="flex-row flex-wrap gap-2 mb-6">
-        {genres.map((genre) => (
-          <TouchableOpacity
-            key={genre}
-            onPress={() => toggleGenre(genre)}
-            className={`px-3 py-1 rounded-full border ${
-              favoriteGenres.includes(genre)
-                ? 'bg-purple-600 border-purple-500'
-                : 'bg-zinc-800 border-zinc-600'
-            }`}
-          >
-            <Text className="text-white text-sm">{genre}</Text>
-          </TouchableOpacity>
-        ))}
-      </View>
-
-      {/* Guardar y Cerrar sesión */}
-      <TouchableOpacity
-        onPress={handleSave}
-        className="bg-purple-600 py-3 rounded-xl items-center mb-4"
-      >
-        <Text className="text-white font-bold text-base">
-          💾 Guardar cambios
-        </Text>
-      </TouchableOpacity>
-
-      <TouchableOpacity
-        onPress={handleLogout}
-        className="bg-red-600 py-3 rounded-xl items-center"
-      >
-        <Text className="text-white font-bold text-base">
-          🚪 Cerrar sesión
-        </Text>
-      </TouchableOpacity>
+          </Dialog.Content>
+          <Dialog.Actions>
+            <PaperButton onPress={() => setShowDatePicker(false)}>
+              Cancelar
+            </PaperButton>
+            <PaperButton onPress={() => {
+              // formateo YYYY-MM-DD en hora local
+              const y = tempDate.getFullYear();
+              const m = String(tempDate.getMonth() + 1).padStart(2, '0');
+              const D = String(tempDate.getDate()).padStart(2, '0');
+              setBirthDate(`${y}-${m}-${D}`);
+              setShowDatePicker(false);
+            }}>
+              Aceptar
+            </PaperButton>
+          </Dialog.Actions>
+        </Dialog>
+      </Portal>
     </ScrollView>
   );
 }
-
-const styles = StyleSheet.create({
-  modalBackdrop: {
-    flex: 1,
-    justifyContent: 'center',
-    backgroundColor: 'rgba(0,0,0,0.5)',
-  },
-  modalContent: {
-    margin: 24,
-    backgroundColor: '#fff',
-    borderRadius: 8,
-    overflow: 'hidden',
-  },
-  modalButtons: {
-    flexDirection: 'row',
-    justifyContent: 'space-around',
-    padding: 8,
-  },
-});

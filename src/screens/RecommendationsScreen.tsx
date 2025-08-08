@@ -1,18 +1,25 @@
 import React, { useEffect, useState } from 'react';
 import {
   View,
-  Text,
   FlatList,
   Image,
-  TouchableOpacity,
   ActivityIndicator,
   ScrollView,
   Linking,
-  TextInput,
   KeyboardAvoidingView,
   Platform,
   Keyboard,
 } from 'react-native';
+import { 
+  Text, 
+  Card, 
+  Button, 
+  Portal, 
+  Dialog,
+  TextInput,
+  Chip,
+  Divider
+} from 'react-native-paper';
 import AsyncStorage from '@react-native-async-storage/async-storage';
 import axios from 'axios';
 import { API_URL } from '@env';
@@ -204,7 +211,7 @@ export default function RecommendationsScreen() {
 
   return (
     <View style={{ flex: 1, backgroundColor: '#000', paddingHorizontal: 16, paddingTop: 40 }}>
-      <Text style={{ color: '#fff', fontSize: 24, fontWeight: 'bold', marginBottom: 16 }}>
+      <Text variant="headlineMedium" style={{ color: '#fff', marginBottom: 16, fontWeight: 'bold' }}>
         🧠 Recomendaciones
       </Text>
 
@@ -213,41 +220,38 @@ export default function RecommendationsScreen() {
           behavior={Platform.OS === 'ios' ? 'padding' : 'height'}
           style={{ marginBottom: 16 }}
         >
-          <View style={{ backgroundColor: '#333', padding: 16, borderRadius: 12, marginBottom: 8 }}>
-            <Text style={{ color: '#fff', marginBottom: 8, fontSize: 14 }}>
-              Cuéntanos qué tipo de películas o series te gustan:
-            </Text>
-            <TextInput
-              placeholder="Ej: Me gustan comedias románticas y dramas con finales inesperados"
-              placeholderTextColor="#ccc"
-              style={{
-                backgroundColor: '#fff',
-                padding: 8,
-                borderRadius: 8,
-                marginBottom: 12,
-                color: '#000',
-                minHeight: 60,
-              }}
-              multiline
-              value={initialPrompt}
-              onChangeText={setInitialPrompt}
-            />
-
-            <TouchableOpacity
-              onPress={generateNewRecommendations}
-              style={{
-                padding: 12,
-                borderRadius: 8,
-                backgroundColor: isGenerating ? '#555' : '#8b5cf6',
-                alignItems: 'center',
-              }}
-              disabled={isGenerating}
-            >
-              <Text style={{ color: '#fff', fontSize: 16 }}>
-                {isGenerating ? '🔄 Generando...' : '🎯 Obtener recomendaciones'}
+          <Card style={{ backgroundColor: '#1f1f1f', marginBottom: 8 }}>
+            <Card.Content style={{ padding: 16 }}>
+              <Text variant="bodyMedium" style={{ color: '#fff', marginBottom: 8 }}>
+                Cuéntanos qué tipo de películas o series te gustan:
               </Text>
-            </TouchableOpacity>
-          </View>
+              <TextInput
+                placeholder="Ej: Me gustan comedias románticas y dramas con finales inesperados"
+                placeholderTextColor="#ccc"
+                style={{
+                  backgroundColor: '#fff',
+                  marginBottom: 12,
+                  color: '#000',
+                  minHeight: 60,
+                }}
+                multiline
+                value={initialPrompt}
+                onChangeText={setInitialPrompt}
+                mode="outlined"
+              />
+
+              <Button
+                mode="contained"
+                onPress={generateNewRecommendations}
+                disabled={isGenerating}
+                loading={isGenerating}
+                style={{ backgroundColor: isGenerating ? '#555' : '#8b5cf6' }}
+                contentStyle={{ paddingVertical: 8 }}
+              >
+                {isGenerating ? '🔄 Generando...' : '🎯 Obtener recomendaciones'}
+              </Button>
+            </Card.Content>
+          </Card>
         </KeyboardAvoidingView>
       )}
 
@@ -259,190 +263,169 @@ export default function RecommendationsScreen() {
           const isFav = favoriteIds.has(item.tmdbId);
 
           return (
-            <View style={{ marginBottom: 24 }}>
-              <TouchableOpacity
-                onPress={() => setSelectedItem(item)}
-                style={{ flexDirection: 'row', alignItems: 'center' }}
-              >
-                {item.posterUrl ? (
-                  <Image
-                    source={{ uri: item.posterUrl }}
-                    style={{ width: 96, height: 144, borderRadius: 8, marginRight: 16 }}
-                    resizeMode="cover"
-                  />
-                ) : (
-                  <View
-                    style={{
-                      width: 96,
-                      height: 144,
-                      backgroundColor: '#555',
-                      borderRadius: 8,
-                      marginRight: 16,
-                      justifyContent: 'center',
-                      alignItems: 'center',
-                    }}
-                  >
-                    <Text style={{ color: '#fff', fontSize: 12, textAlign: 'center' }}>
-                      Póster no disponible
+            <Card style={{ 
+              marginBottom: 24, 
+              backgroundColor: '#1f1f1f',
+              borderRadius: 12
+            }}>
+              <Card.Content style={{ padding: 16 }}>
+                <View style={{ flexDirection: 'row', alignItems: 'flex-start' }}>
+                  {item.posterUrl ? (
+                    <Image
+                      source={{ uri: item.posterUrl }}
+                      style={{ width: 96, height: 144, borderRadius: 8, marginRight: 16 }}
+                      resizeMode="cover"
+                    />
+                  ) : (
+                    <View
+                      style={{
+                        width: 96,
+                        height: 144,
+                        backgroundColor: '#555',
+                        borderRadius: 8,
+                        marginRight: 16,
+                        justifyContent: 'center',
+                        alignItems: 'center',
+                      }}
+                    >
+                      <Text style={{ color: '#fff', fontSize: 12, textAlign: 'center' }}>
+                        Póster no disponible
+                      </Text>
+                    </View>
+                  )}
+                  <View style={{ flex: 1 }}>
+                    <Text variant="titleMedium" style={{ color: '#fff', marginBottom: 4, fontWeight: '600' }}>
+                      {item.title}
                     </Text>
-                  </View>
-                )}
-                <View style={{ flex: 1 }}>
-                  <Text style={{ color: '#fff', fontSize: 18, fontWeight: '600', marginBottom: 4 }}>
-                    {item.title}
-                  </Text>
-                  <Text style={{ color: '#aaa', fontSize: 12, marginBottom: 6 }}>
-                    {item.releaseDate?.substring(0, 10)}
-                  </Text>
-                  <Text style={{ color: '#eee', fontSize: 14 }} numberOfLines={3}>
-                    {item.overview}
-                  </Text>
-                  <View style={{ flexDirection: 'row', flexWrap: 'wrap', marginTop: 8, gap: 8 }}>
-                    <TouchableOpacity
-                      onPress={() => markAsSeen(item)}
-                      disabled={item.seen}
-                      style={{
-                        paddingHorizontal: 12,
-                        paddingVertical: 6,
-                        borderRadius: 16,
-                        backgroundColor: item.seen ? '#4c1d95' : '#7c3aed',
-                        marginRight: 8,
-                      }}
-                    >
-                      <Text style={{ color: '#fff', fontSize: 12 }}>
-                        {item.seen ? '✅ Visto' : '⭐ Visto'}
-                      </Text>
-                    </TouchableOpacity>
+                    <Text variant="bodySmall" style={{ color: '#aaa', marginBottom: 6 }}>
+                      {item.releaseDate?.substring(0, 10)}
+                    </Text>
+                    <Text variant="bodyMedium" style={{ color: '#eee' }} numberOfLines={3}>
+                      {item.overview}
+                    </Text>
+                    
+                    <View style={{ flexDirection: 'row', flexWrap: 'wrap', marginTop: 12, gap: 8 }}>
+                      <Button
+                        mode="contained"
+                        onPress={() => markAsSeen(item)}
+                        disabled={item.seen}
+                        style={{
+                          backgroundColor: item.seen ? '#4c1d95' : '#7c3aed',
+                          borderRadius: 16,
+                        }}
+                        contentStyle={{ paddingHorizontal: 12, paddingVertical: 4 }}
+                        labelStyle={{ fontSize: 12 }}
+                        icon={item.seen ? "check" : "eye"}
+                      >
+                        {item.seen ? 'Visto' : 'Visto'}
+                      </Button>
 
-                    <TouchableOpacity
-                      onPress={() => markAsFavorite(item)}
-                      disabled={isFav}
-                      style={{
-                        paddingHorizontal: 12,
-                        paddingVertical: 6,
-                        borderRadius: 16,
-                        backgroundColor: isFav ? '#881337' : '#ec4899',
-                        marginRight: 8,
-                      }}
-                    >
-                      <Text style={{ color: '#fff', fontSize: 12 }}>
-                        {isFav ? '❤️ Agregado' : '❤️ Favorito'}
-                      </Text>
-                    </TouchableOpacity>
+                      <Button
+                        mode="contained"
+                        onPress={() => markAsFavorite(item)}
+                        disabled={isFav}
+                        style={{
+                          backgroundColor: isFav ? '#881337' : '#ec4899',
+                          borderRadius: 16,
+                        }}
+                        contentStyle={{ paddingHorizontal: 12, paddingVertical: 4 }}
+                        labelStyle={{ fontSize: 12 }}
+                        icon="heart"
+                      >
+                        {isFav ? 'Agregado' : 'Favorito'}
+                      </Button>
 
-                    <TouchableOpacity
-                      onPress={() => setDismissedIds(prev => new Set(prev).add(item.id))}
-                      style={{
-                        paddingHorizontal: 12,
-                        paddingVertical: 6,
-                        borderRadius: 16,
-                        backgroundColor: '#444',
-                        marginRight: 8,
-                      }}
-                    >
-                      <Text style={{ color: '#fff', fontSize: 12 }}>🙈 No me interesa</Text>
-                    </TouchableOpacity>
+                      <Button
+                        mode="contained"
+                        onPress={() => setDismissedIds(prev => new Set(prev).add(item.id))}
+                        style={{
+                          backgroundColor: '#444',
+                          borderRadius: 16,
+                        }}
+                        contentStyle={{ paddingHorizontal: 12, paddingVertical: 4 }}
+                        labelStyle={{ fontSize: 12 }}
+                        icon="eye-off"
+                      >
+                        No me interesa
+                      </Button>
+                    </View>
                   </View>
                 </View>
-              </TouchableOpacity>
-            </View>
+              </Card.Content>
+            </Card>
           );
         }}
       />
 
-      {selectedItem && (
-        <View
-          style={{
-            position: 'absolute',
-            top: 0,
-            left: 0,
-            right: 0,
-            bottom: 0,
-            backgroundColor: 'rgba(0,0,0,0.8)',
-            justifyContent: 'center',
-            alignItems: 'center',
-            paddingHorizontal: 16,
-          }}
+      {/* Dialog de detalle */}
+      <Portal>
+        <Dialog
+          visible={selectedItem !== null}
+          onDismiss={() => setSelectedItem(null)}
+          style={{ backgroundColor: '#fff' }}
         >
-          <View
-            style={{
-              backgroundColor: '#fff',
-              borderRadius: 16,
-              width: '100%',
-              maxHeight: '80%',
-            }}
-          >
-            <ScrollView
-              contentContainerStyle={{ padding: 20 }}
-              showsVerticalScrollIndicator={false}
-            >
-              <Text
-                style={{ fontSize: 20, fontWeight: '700', marginBottom: 12, color: '#000' }}
-              >
-                {selectedItem.title}
-              </Text>
-              <Text style={{ color: '#333', fontSize: 14, marginBottom: 20 }}>
-                {selectedItem.overview}
-              </Text>
-              <View
-                style={{ flexDirection: 'row', justifyContent: 'space-around', marginBottom: 20 }}
-              >
-                <View style={{ alignItems: 'center' }}>
-                  <Text style={{ fontSize: 12, color: '#666' }}>⭐ Votos</Text>
-                  <Text style={{ fontSize: 16, fontWeight: '600', color: '#fbbf24' }}>
-                    {selectedItem.voteAverage}
-                  </Text>
-                </View>
-                <View style={{ alignItems: 'center' }}>
-                  <Text style={{ fontSize: 12, color: '#666' }}>🔥 Popularidad</Text>
-                  <Text style={{ fontSize: 16, fontWeight: '600', color: '#db2777' }}>
-                    {selectedItem.popularity ?? '-'}
-                  </Text>
-                </View>
-                <View style={{ alignItems: 'center' }}>
-                  <Text style={{ fontSize: 12, color: '#666' }}>🎬 Tipo</Text>
-                  <Text style={{ fontSize: 16, fontWeight: '600', color: '#059669' }}>
-                    {selectedItem.mediaType.toUpperCase()}
-                  </Text>
-                </View>
-              </View>
-
-              {Array.isArray(selectedItem.platforms) && selectedItem.platforms.length > 0 && (
-                <View style={{ marginBottom: 20 }}>
-                  <Text style={{ fontSize: 14, fontWeight: '600', marginBottom: 8, color: '#000' }}>
-                    Disponible en:
-                  </Text>
-                  {selectedItem.platforms.map(platform => (
-                    <Text key={platform} style={{ fontSize: 14, color: '#444' }}>
-                      • {platform}
-                    </Text>
-                  ))}
-                </View>
-              )}
-
-              {selectedItem.trailerUrl && (
-                <TouchableOpacity
-                  onPress={() => Linking.openURL(selectedItem.trailerUrl!)}
-                  style={{ backgroundColor: '#dc2626', padding: 12, borderRadius: 12, marginBottom: 20 }}
-                >
-                  <Text style={{ color: '#fff', fontSize: 16, textAlign: 'center' }}>
-                    ▶️ Ver tráiler
-                  </Text>
-                </TouchableOpacity>
-              )}
-
-              <TouchableOpacity
-                onPress={() => setSelectedItem(null)}
-                style={{ backgroundColor: '#8b5cf6', padding: 12, borderRadius: 12 }}
-              >
-                <Text style={{ color: '#fff', fontSize: 16, textAlign: 'center' }}>
-                  Cerrar
+          {selectedItem && (
+            <>
+              <Dialog.Title>{selectedItem.title}</Dialog.Title>
+              <Dialog.Content>
+                <Text variant="bodyMedium" style={{ color: '#333', marginBottom: 20 }}>
+                  {selectedItem.overview}
                 </Text>
-              </TouchableOpacity>
-            </ScrollView>
-          </View>
-        </View>
-      )}
+                
+                <View style={{ flexDirection: 'row', justifyContent: 'space-around', marginBottom: 20 }}>
+                  <View style={{ alignItems: 'center' }}>
+                    <Text variant="labelSmall" style={{ color: '#666' }}>⭐ Votos</Text>
+                    <Text variant="titleMedium" style={{ color: '#fbbf24', fontWeight: '600' }}>
+                      {selectedItem.voteAverage}
+                    </Text>
+                  </View>
+                  <View style={{ alignItems: 'center' }}>
+                    <Text variant="labelSmall" style={{ color: '#666' }}>🔥 Popularidad</Text>
+                    <Text variant="titleMedium" style={{ color: '#db2777', fontWeight: '600' }}>
+                      {selectedItem.popularity ?? '-'}
+                    </Text>
+                  </View>
+                  <View style={{ alignItems: 'center' }}>
+                    <Text variant="labelSmall" style={{ color: '#666' }}>🎬 Tipo</Text>
+                    <Text variant="titleMedium" style={{ color: '#059669', fontWeight: '600' }}>
+                      {selectedItem.mediaType.toUpperCase()}
+                    </Text>
+                  </View>
+                </View>
+
+                {Array.isArray(selectedItem.platforms) && selectedItem.platforms.length > 0 && (
+                  <View style={{ marginBottom: 20 }}>
+                    <Text variant="titleMedium" style={{ marginBottom: 8, fontWeight: '600' }}>
+                      Disponible en:
+                    </Text>
+                    {selectedItem.platforms.map(platform => (
+                      <Text key={platform} variant="bodyMedium" style={{ color: '#444' }}>
+                        • {platform}
+                      </Text>
+                    ))}
+                  </View>
+                )}
+
+                {selectedItem.trailerUrl && (
+                  <Button
+                    mode="contained"
+                    onPress={() => Linking.openURL(selectedItem.trailerUrl!)}
+                    style={{ backgroundColor: '#dc2626', marginBottom: 20 }}
+                    icon="play"
+                  >
+                    Ver tráiler
+                  </Button>
+                )}
+              </Dialog.Content>
+              <Dialog.Actions>
+                <Button onPress={() => setSelectedItem(null)} mode="contained">
+                  Cerrar
+                </Button>
+              </Dialog.Actions>
+            </>
+          )}
+        </Dialog>
+      </Portal>
     </View>
   );
 }

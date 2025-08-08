@@ -3,9 +3,6 @@
 import React, { useState } from 'react';
 import {
   View,
-  Text,
-  TextInput,
-  TouchableOpacity,
   ScrollView,
   StyleSheet,
   Modal,
@@ -14,6 +11,16 @@ import {
   Platform,
   Alert,
 } from 'react-native';
+import { 
+  Text, 
+  TextInput, 
+  Button as PaperButton, 
+  Card, 
+  Chip,
+  Divider,
+  Portal,
+  Dialog
+} from 'react-native-paper';
 import DateTimePicker, {
   DateTimePickerEvent,
 } from '@react-native-community/datetimepicker';
@@ -27,13 +34,44 @@ export default function RegisterScreen({ navigation }: any) {
   const [email, setEmail]                     = useState('');
   const [password, setPassword]               = useState('');
   const [confirmPassword, setConfirmPassword] = useState('');
-  const defaultDate = new Date(2000, 0, 1);
-  const [birthDate, setBirthDate]             = useState<Date>(defaultDate);
-  const [showDatePicker, setShowDatePicker]   = useState(false);
-  const [tempDate, setTempDate]               = useState<Date>(defaultDate);
+  const [birthDate, setBirthDate]             = useState('');
+  const [country, setCountry]                 = useState<string|null>(null);
+  const [language, setLanguage]               = useState<string|null>(null);
+  const [favoriteGenres, setFavoriteGenres]   = useState<string[]>([]);
+  const [loading, setLoading]                 = useState(false);
+  const [showPassword, setShowPassword]       = useState(false);
+  const [showConfirmPassword, setShowConfirmPassword] = useState(false);
 
-  const [country, setCountry]   = useState<string|null>(null);
-  const [language, setLanguage] = useState<string|null>(null);
+  // Estado del date picker
+  const [showDatePicker, setShowDatePicker] = useState(false);
+  const [tempDate, setTempDate] = useState(new Date());
+
+  const genres = [
+    'Acción', 'Aventura', 'Animación', 'Comedia', 'Crimen',
+    'Documental', 'Drama', 'Fantasía', 'Historia', 'Terror',
+    'Romance', 'Ciencia ficción', 'Suspenso'
+  ];
+
+  const countryOptions = [
+    { label: 'Chile', value: 'CL' },
+    { label: 'Argentina', value: 'AR' },
+    { label: 'Perú', value: 'PE' },
+    { label: 'México', value: 'MX' },
+    { label: 'Colombia', value: 'CO' },
+    { label: 'España', value: 'ES' },
+    { label: 'Estados Unidos', value: 'US' },
+    { label: 'Brasil', value: 'BR' },
+    { label: 'Uruguay', value: 'UY' },
+    { label: 'Paraguay', value: 'PY' },
+  ];
+
+  const languageOptions = [
+    { label: 'Español', value: 'es' },
+    { label: 'Inglés', value: 'en' },
+    { label: 'Portugués', value: 'pt' },
+    { label: 'Francés', value: 'fr' },
+    { label: 'Alemán', value: 'de' },
+  ];
 
   const handleCountryChange = (value: string) => {
     console.log('RegisterScreen: Country changed to:', value);
@@ -44,93 +82,6 @@ export default function RegisterScreen({ navigation }: any) {
     console.log('RegisterScreen: Language changed to:', value);
     setLanguage(value);
   };
-  const [favoriteGenres, setFavoriteGenres] = useState<string[]>([]);
-  const [favoriteMedia, setFavoriteMedia]   = useState('');
-
-  const [loading, setLoading] = useState(false);
-
-  const countryOptions = [
-    { label: 'Chile', value: 'CL' },
-    { label: 'México', value: 'MX' },
-    { label: 'Argentina', value: 'AR' },
-    { label: 'España', value: 'ES' },
-    { label: 'Colombia', value: 'CO' },
-    { label: 'Perú', value: 'PE' },
-    { label: 'Venezuela', value: 'VE' },
-    { label: 'Ecuador', value: 'EC' },
-    { label: 'Bolivia', value: 'BO' },
-    { label: 'Uruguay', value: 'UY' },
-    { label: 'Paraguay', value: 'PY' },
-    { label: 'Estados Unidos', value: 'US' },
-    { label: 'Canadá', value: 'CA' },
-  ];
-
-  const languageOptions = [
-    { label: 'Español', value: 'es' },
-    { label: 'Inglés', value: 'en' },
-    { label: 'Portugués', value: 'pt' },
-    { label: 'Francés', value: 'fr' },
-  ];
-
-  const genres = [
-  'Acción',
-  'Aventura',
-  'Animación',
-  'Comedia',
-  'Crimen',
-  'Documental',
-  'Drama',
-  'Fantasía',
-  'Historia',
-  'Terror',
-  'Romance',
-  'Ciencia ficción',
-  'Suspenso',
-];
-
-  const handleRegister = async () => {
-    if (password !== confirmPassword) {
-      Toast.show({ type: 'error', text1: 'Error', text2: 'Las contraseñas no coinciden' });
-      return;
-    }
-    if (!country || !language) {
-      Toast.show({ type: 'error', text1: 'Error', text2: 'Completa todos los campos' });
-      return;
-    }
-
-    setLoading(true);
-    try {
-      await axios.post(`${API_URL}/users`, {
-        fullName,
-        email,
-        password,
-        birthDate: birthDate.toISOString().slice(0, 10),
-        country,
-        language,
-        favoriteGenres,
-        favoriteMedia,
-      });
-
-      Toast.show({
-        type: 'success',
-        text1: '¡Registro exitoso!',
-        text2: 'Revisa tu correo para activar tu cuenta',
-      });
-      setTimeout(() => navigation.replace('Login'), 1500);
-    } catch (error: any) {
-      const msg =
-        error.response?.data?.message ??
-        error.response?.data?.detail ??
-        'No se pudo completar el registro';
-      Toast.show({
-        type: 'error',
-        text1: 'Error al registrar',
-        text2: msg,
-      });
-    } finally {
-      setLoading(false);
-    }
-  };
 
   const toggleGenre = (genre: string) => {
     if (favoriteGenres.includes(genre)) {
@@ -140,191 +91,290 @@ export default function RegisterScreen({ navigation }: any) {
     }
   };
 
+  const handleRegister = async () => {
+    if (!fullName || !email || !password || !confirmPassword) {
+      Toast.show({
+        type: 'error',
+        text1: 'Error al registrar',
+        text2: 'Por favor completa todos los campos obligatorios',
+      });
+      return;
+    }
+
+    if (password !== confirmPassword) {
+      Toast.show({
+        type: 'error',
+        text1: 'Error al registrar',
+        text2: 'Las contraseñas no coinciden',
+      });
+      return;
+    }
+
+    if (password.length < 6) {
+      Toast.show({
+        type: 'error',
+        text1: 'Error al registrar',
+        text2: 'La contraseña debe tener al menos 6 caracteres',
+      });
+      return;
+    }
+
+    setLoading(true);
+    try {
+      const response = await axios.post(`${API_URL}/auth/register`, {
+        fullName,
+        email,
+        password,
+        birthDate: birthDate ? new Date(birthDate).toISOString() : undefined,
+        country,
+        language,
+        favoriteGenres,
+      });
+
+      Toast.show({
+        type: 'success',
+        text1: '✅ Registro exitoso',
+        text2: 'Tu cuenta ha sido creada correctamente',
+      });
+
+      setTimeout(() => {
+        navigation.replace('Login');
+      }, 1500);
+    } catch (error: any) {
+      console.error(error);
+      const serverMessage = error.response?.data?.message;
+      Toast.show({
+        type: 'error',
+        text1: 'Error al registrar',
+        text2: serverMessage || 'Ocurrió un problema, intenta de nuevo',
+      });
+    } finally {
+      setLoading(false);
+    }
+  };
+
   return (
-    <View style={styles.container}>
-      <KeyboardAvoidingView
-        style={styles.container}
-        behavior={Platform.OS === 'ios' ? 'padding' : 'height'}
+    <KeyboardAvoidingView
+      style={{ flex: 1, backgroundColor: '#000' }}
+      behavior={Platform.OS === 'ios' ? 'padding' : 'height'}
+    >
+      <ScrollView
+        contentContainerStyle={styles.scroll}
+        keyboardShouldPersistTaps="handled"
+        showsVerticalScrollIndicator={false}
       >
-        <ScrollView
-          contentContainerStyle={styles.scroll}
-          keyboardShouldPersistTaps="handled"
-          showsVerticalScrollIndicator={false}
-        >
-          <Text style={styles.title}>Crear cuenta</Text>
+        <Text variant="headlineMedium" style={{ color: '#fff', marginBottom: 32, textAlign: 'center', fontWeight: '600' }}>
+          Crear cuenta
+        </Text>
 
-          <TextInput
-            placeholder="Nombre completo"
-            placeholderTextColor="#666"
-            value={fullName}
-            onChangeText={setFullName}
-            style={styles.input}
-          />
-
-          <TextInput
-            placeholder="Correo electrónico"
-            placeholderTextColor="#666"
-            autoCapitalize="none"
-            keyboardType="email-address"
-            value={email}
-            onChangeText={setEmail}
-            style={styles.input}
-          />
-
-          <TextInput
-            placeholder="Contraseña"
-            placeholderTextColor="#666"
-            secureTextEntry
-            value={password}
-            onChangeText={setPassword}
-            style={styles.input}
-          />
-
-          <TextInput
-            placeholder="Confirmar contraseña"
-            placeholderTextColor="#666"
-            secureTextEntry
-            value={confirmPassword}
-            onChangeText={setConfirmPassword}
-            style={styles.input}
-          />
-
-          <TouchableOpacity
-            onPress={() => {
-              setTempDate(birthDate);
-              setShowDatePicker(true);
-            }}
-            style={styles.input}
-            activeOpacity={0.8}
-          >
-            <Text style={styles.inputText}>
-              Fecha de nacimiento: {birthDate.toISOString().slice(0, 10)}
+        <Card style={{ backgroundColor: '#1f1f1f', borderRadius: 16 }}>
+          <Card.Content style={{ padding: 24 }}>
+            <Text variant="titleMedium" style={{ color: '#fff', marginBottom: 16 }}>
+              Información Personal
             </Text>
-          </TouchableOpacity>
 
-          <Modal visible={showDatePicker} transparent animationType="slide">
-            <View style={styles.modalBackdrop}>
-              <View style={styles.modalContent}>
-                <DateTimePicker
-                  value={tempDate}
-                  mode="date"
-                  display="spinner"
-                  maximumDate={new Date()}
-                  locale="es-ES"
-                  themeVariant="light"
-                  textColor="#000"
-                  onChange={(_: DateTimePickerEvent, selected?: Date) => {
-                    if (selected) setTempDate(selected);
-                  }}
-                  style={{ backgroundColor: '#fff' }}
+            <TextInput
+              label="Nombre completo"
+              value={fullName}
+              onChangeText={setFullName}
+              mode="outlined"
+              style={{ marginBottom: 16 }}
+              theme={{ 
+                colors: { 
+                  onSurfaceVariant: '#aaa',
+                  outline: '#444'
+                } 
+              }}
+            />
+
+            <TextInput
+              label="Correo electrónico"
+              value={email}
+              onChangeText={setEmail}
+              mode="outlined"
+              keyboardType="email-address"
+              autoCapitalize="none"
+              style={{ marginBottom: 16 }}
+              theme={{ 
+                colors: { 
+                  onSurfaceVariant: '#aaa',
+                  outline: '#444'
+                } 
+              }}
+            />
+
+            <TextInput
+              label="Contraseña"
+              value={password}
+              onChangeText={setPassword}
+              mode="outlined"
+              secureTextEntry={!showPassword}
+              right={
+                <TextInput.Icon 
+                  icon={showPassword ? "eye-off" : "eye"} 
+                  onPress={() => setShowPassword(!showPassword)}
                 />
-                <View style={styles.modalButtons}>
-                  <Button title="Cancelar" onPress={() => setShowDatePicker(false)} />
-                  <Button
-                    title="Aceptar"
-                    onPress={() => {
-                      setBirthDate(tempDate);
-                      setShowDatePicker(false);
-                    }}
-                  />
-                </View>
-              </View>
-            </View>
-          </Modal>
+              }
+              style={{ marginBottom: 16 }}
+              theme={{ 
+                colors: { 
+                  onSurfaceVariant: '#aaa',
+                  outline: '#444'
+                } 
+              }}
+            />
 
-          <CustomPicker
-            label="País"
-            value={country}
-            options={countryOptions}
-            onChange={handleCountryChange}
-          />
+            <TextInput
+              label="Confirmar contraseña"
+              value={confirmPassword}
+              onChangeText={setConfirmPassword}
+              mode="outlined"
+              secureTextEntry={!showConfirmPassword}
+              right={
+                <TextInput.Icon 
+                  icon={showConfirmPassword ? "eye-off" : "eye"} 
+                  onPress={() => setShowConfirmPassword(!showConfirmPassword)}
+                />
+              }
+              style={{ marginBottom: 16 }}
+              theme={{ 
+                colors: { 
+                  onSurfaceVariant: '#aaa',
+                  outline: '#444'
+                } 
+              }}
+            />
 
-          <CustomPicker
-            label="Idioma"
-            value={language}
-            options={languageOptions}
-            onChange={handleLanguageChange}
-          />
+            <PaperButton
+              mode="outlined"
+              onPress={() => {
+                setTempDate(birthDate ? new Date(birthDate) : new Date());
+                setShowDatePicker(true);
+              }}
+              style={{ marginBottom: 16 }}
+              theme={{ 
+                colors: { 
+                  outline: '#444'
+                } 
+              }}
+            >
+              {birthDate || 'Fecha de nacimiento (opcional)'}
+            </PaperButton>
 
-          <Text style={styles.sectionLabel}>Géneros favoritos</Text>
-          <View style={styles.genresContainer}>
-            {genres.map((genre) => (
-              <TouchableOpacity
-                key={genre}
-                onPress={() => toggleGenre(genre)}
-                style={[
-                  styles.genreButton,
-                  favoriteGenres.includes(genre)
-                    ? styles.genreSelected
-                    : styles.genreUnselected,
-                ]}
-              >
-                <Text
-                  style={[
-                    styles.genreText,
-                    favoriteGenres.includes(genre)
-                      ? styles.genreTextSelected
-                      : styles.genreTextUnselected,
-                  ]}
+            <CustomPicker
+              label="País"
+              value={country}
+              options={countryOptions}
+              onChange={handleCountryChange}
+            />
+
+            <CustomPicker
+              label="Idioma"
+              value={language}
+              options={languageOptions}
+              onChange={handleLanguageChange}
+            />
+
+            <Divider style={{ marginVertical: 16, backgroundColor: '#333' }} />
+
+            <Text variant="titleMedium" style={{ color: '#fff', marginBottom: 16 }}>
+              Géneros favoritos
+            </Text>
+            <View style={{ flexDirection: 'row', flexWrap: 'wrap', gap: 8, marginBottom: 24 }}>
+              {genres.map((genre) => (
+                <Chip
+                  key={genre}
+                  selected={favoriteGenres.includes(genre)}
+                  onPress={() => toggleGenre(genre)}
+                  mode="outlined"
+                  style={{ 
+                    backgroundColor: favoriteGenres.includes(genre) ? '#a855f7' : 'transparent',
+                    borderColor: favoriteGenres.includes(genre) ? '#a855f7' : '#444'
+                  }}
+                  textStyle={{ 
+                    color: favoriteGenres.includes(genre) ? '#fff' : '#fff' 
+                  }}
                 >
                   {genre}
-                </Text>
-              </TouchableOpacity>
-            ))}
-          </View>
+                </Chip>
+              ))}
+            </View>
 
-          <Text style={styles.sectionLabel}>Tus películas o series favoritas</Text>
-          <TextInput
-            placeholder="Escribe algo sobre tus gustos..."
-            placeholderTextColor="#888"
-            value={favoriteMedia}
-            onChangeText={setFavoriteMedia}
-            style={[styles.input, styles.textarea]}
-            multiline
-            numberOfLines={4}
-          />
+            <PaperButton
+              mode="contained"
+              onPress={handleRegister}
+              loading={loading}
+              disabled={loading}
+              style={{ borderRadius: 12 }}
+              contentStyle={{ paddingVertical: 8 }}
+              icon="account-plus"
+            >
+              Registrarme
+            </PaperButton>
 
-          <TouchableOpacity
-            style={[styles.button, loading && { opacity: 0.6 }]}
-            onPress={handleRegister}
-            disabled={loading}
-          >
-            <Text style={styles.buttonText}>
-              {loading ? 'Registrando...' : 'Registrarme'}
-            </Text>
-          </TouchableOpacity>
+            <Divider style={{ marginVertical: 16, backgroundColor: '#333' }} />
 
-          <TouchableOpacity onPress={() => navigation.goBack()}>
-            <Text style={styles.link}>¿Ya tienes cuenta? Inicia sesión</Text>
-          </TouchableOpacity>
-        </ScrollView>
+            <PaperButton
+              mode="text"
+              onPress={() => navigation.navigate('Login')}
+              textColor="#a855f7"
+              compact
+            >
+              ¿Ya tienes cuenta? Inicia sesión
+            </PaperButton>
+          </Card.Content>
+        </Card>
+
+        {/* Dialog para fecha de nacimiento */}
+        <Portal>
+          <Dialog visible={showDatePicker} onDismiss={() => setShowDatePicker(false)}>
+            <Dialog.Title>Fecha de nacimiento</Dialog.Title>
+            <Dialog.Content>
+              <DateTimePicker
+                value={tempDate}
+                mode="date"
+                display="spinner"
+                maximumDate={new Date()}
+                locale="es-ES"
+                themeVariant="light"
+                textColor="#000"
+                onChange={(
+                  _event: DateTimePickerEvent,
+                  selected?: Date
+                ) => {
+                  if (selected) setTempDate(selected);
+                }}
+                style={{ backgroundColor: '#fff' }}
+              />
+            </Dialog.Content>
+            <Dialog.Actions>
+              <PaperButton onPress={() => setShowDatePicker(false)}>
+                Cancelar
+              </PaperButton>
+              <PaperButton onPress={() => {
+                const y = tempDate.getFullYear();
+                const m = String(tempDate.getMonth() + 1).padStart(2, '0');
+                const D = String(tempDate.getDate()).padStart(2, '0');
+                setBirthDate(`${y}-${m}-${D}`);
+                setShowDatePicker(false);
+              }}>
+                Aceptar
+              </PaperButton>
+            </Dialog.Actions>
+          </Dialog>
+        </Portal>
+
         <Toast />
-      </KeyboardAvoidingView>
-    </View>
+      </ScrollView>
+    </KeyboardAvoidingView>
   );
 }
 
 const styles = StyleSheet.create({
-  container:        { flex: 1, backgroundColor: '#000' },
-  scroll:           { padding: 24, paddingBottom: 80 },
-  title:            { color: '#fff', fontSize: 28, fontWeight: 'bold', marginBottom: 24, textAlign: 'center' },
-  input:            { backgroundColor: '#222', color: '#fff', borderRadius: 8, padding: 14, marginBottom: 16 },
-  textarea:         { height: 100, textAlignVertical: 'top' },
-  inputText:        { color: '#fff' },
-
-  sectionLabel:     { color: '#fff', fontSize: 16, fontWeight: '600', marginBottom: 8 },
-  genresContainer:  { flexDirection: 'row', flexWrap: 'wrap', marginBottom: 24 },
-  genreButton:      { paddingVertical: 6, paddingHorizontal: 12, borderRadius: 16, borderWidth: 1, margin: 4 },
-  genreSelected:    { backgroundColor: '#a855f7', borderColor: '#9333ea' },
-  genreUnselected:  { backgroundColor: '#333', borderColor: '#555' },
-  genreText:        { fontSize: 14 },
-  genreTextSelected:{ color: '#000' },
-  genreTextUnselected:{ color: '#fff' },
-  button:           { backgroundColor: '#a855f7', borderRadius: 8, padding: 14, alignItems: 'center', marginTop: 8 },
-  buttonText:       { color: '#fff', fontSize: 16, fontWeight: 'bold' },
-  link:             { color: '#a855f7', textAlign: 'center', marginTop: 12 },
-
-  modalBackdrop:   { flex: 1, justifyContent: 'center', backgroundColor: 'rgba(0,0,0,0.5)' },
-  modalContent:    { margin: 24, backgroundColor: '#fff', borderRadius: 8, overflow: 'hidden' },
-  modalButtons:    { flexDirection: 'row', justifyContent: 'space-around', padding: 8 },
+  scroll: {
+    flexGrow: 1,
+    justifyContent: 'center',
+    paddingHorizontal: 24,
+    backgroundColor: '#000',
+  },
 });

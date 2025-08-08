@@ -1,15 +1,19 @@
 import React, { useState } from 'react';
 import {
   View,
-  Text,
-  TextInput,
-  TouchableOpacity,
   Image,
   KeyboardAvoidingView,
   Platform,
   ScrollView,
   Keyboard,
 } from 'react-native';
+import { 
+  Text, 
+  TextInput, 
+  Button, 
+  Card, 
+  Divider 
+} from 'react-native-paper';
 import AsyncStorage from '@react-native-async-storage/async-storage';
 import axios from 'axios';
 import Toast from 'react-native-toast-message';
@@ -18,9 +22,13 @@ import { API_URL } from '@env';
 export default function LoginScreen({ navigation }: any) {
   const [email, setEmail]       = useState('');
   const [password, setPassword] = useState('');
+  const [loading, setLoading]   = useState(false);
+  const [showPassword, setShowPassword] = useState(false);
 
   const handleLogin = async () => {
-    Keyboard.dismiss(); // Oculta el teclado
+    Keyboard.dismiss();
+    setLoading(true);
+    
     try {
       const response = await axios.post(`${API_URL}/auth/login`, { email, password });
       const token    = response.data.access_token;
@@ -40,6 +48,8 @@ export default function LoginScreen({ navigation }: any) {
         text1: 'Error de Autenticación',
         text2: serverMessage || 'Ocurrió un problema, intenta de nuevo',
       });
+    } finally {
+      setLoading(false);
     }
   };
 
@@ -49,8 +59,14 @@ export default function LoginScreen({ navigation }: any) {
       behavior={Platform.OS === 'ios' ? 'padding' : 'height'}
     >
       <ScrollView
-        contentContainerStyle={{ flexGrow: 1, justifyContent: 'center', paddingHorizontal: 24, backgroundColor: '#000' }}
+        contentContainerStyle={{ 
+          flexGrow: 1, 
+          justifyContent: 'center', 
+          paddingHorizontal: 24, 
+          backgroundColor: '#000' 
+        }}
         keyboardShouldPersistTaps="handled"
+        showsVerticalScrollIndicator={false}
       >
         <View style={{ alignItems: 'center', marginBottom: 32 }}>
           <Image
@@ -60,65 +76,90 @@ export default function LoginScreen({ navigation }: any) {
           />
         </View>
 
-        <Text style={{ color: '#fff', fontSize: 28, fontWeight: '600', marginBottom: 32, textAlign: 'center' }}>
+        <Text 
+          variant="headlineMedium" 
+          style={{ 
+            color: '#fff', 
+            marginBottom: 32, 
+            textAlign: 'center',
+            fontWeight: '600'
+          }}
+        >
           Iniciar sesión
         </Text>
 
-        <View style={{ backgroundColor: '#1f1f1f', borderRadius: 16, padding: 24 }}>
-          <TextInput
-            placeholder="Correo electrónico"
-            placeholderTextColor="#aaa"
-            value={email}
-            onChangeText={setEmail}
-            keyboardType="email-address"
-            autoCapitalize="none"
-            style={{
-              backgroundColor: '#2a2a2a',
-              color: '#fff',
-              borderRadius: 12,
-              padding: 12,
-              marginBottom: 16,
-            }}
-          />
+        <Card style={{ backgroundColor: '#1f1f1f', borderRadius: 16 }}>
+          <Card.Content style={{ padding: 24 }}>
+            <TextInput
+              label="Correo electrónico"
+              value={email}
+              onChangeText={setEmail}
+              mode="outlined"
+              keyboardType="email-address"
+              autoCapitalize="none"
+              style={{ marginBottom: 16 }}
+              theme={{ 
+                colors: { 
+                  onSurfaceVariant: '#aaa',
+                  outline: '#444'
+                } 
+              }}
+            />
 
-          <TextInput
-            placeholder="Contraseña"
-            placeholderTextColor="#aaa"
-            value={password}
-            onChangeText={setPassword}
-            secureTextEntry
-            style={{
-              backgroundColor: '#2a2a2a',
-              color: '#fff',
-              borderRadius: 12,
-              padding: 12,
-              marginBottom: 24,
-            }}
-          />
+            <TextInput
+              label="Contraseña"
+              value={password}
+              onChangeText={setPassword}
+              mode="outlined"
+              secureTextEntry={!showPassword}
+              right={
+                <TextInput.Icon 
+                  icon={showPassword ? "eye-off" : "eye"} 
+                  onPress={() => setShowPassword(!showPassword)}
+                />
+              }
+              style={{ marginBottom: 24 }}
+              theme={{ 
+                colors: { 
+                  onSurfaceVariant: '#aaa',
+                  outline: '#444'
+                } 
+              }}
+            />
 
-          <TouchableOpacity
-            onPress={handleLogin}
-            style={{
-              backgroundColor: '#a855f7',
-              borderRadius: 12,
-              paddingVertical: 14,
-              alignItems: 'center',
-            }}
-          >
-            <Text style={{ color: '#fff', fontSize: 16, fontWeight: '600' }}>
+            <Button
+              mode="contained"
+              onPress={handleLogin}
+              loading={loading}
+              disabled={loading}
+              style={{ borderRadius: 12 }}
+              contentStyle={{ paddingVertical: 8 }}
+            >
               Entrar
-            </Text>
-          </TouchableOpacity>
+            </Button>
 
-          <View style={{ flexDirection: 'row', justifyContent: 'space-between', marginTop: 16 }}>
-            <TouchableOpacity onPress={() => navigation.navigate('Register')}>
-              <Text style={{ color: '#a855f7', fontSize: 14 }}>Registrarme</Text>
-            </TouchableOpacity>
-            <TouchableOpacity onPress={() => navigation.navigate('ForgotPassword')}>
-              <Text style={{ color: '#a855f7', fontSize: 14 }}>Olvidé mi contraseña</Text>
-            </TouchableOpacity>
-          </View>
-        </View>
+            <Divider style={{ marginVertical: 16, backgroundColor: '#333' }} />
+
+            <View style={{ flexDirection: 'row', justifyContent: 'space-between' }}>
+              <Button
+                mode="text"
+                onPress={() => navigation.navigate('Register')}
+                textColor="#a855f7"
+                compact
+              >
+                Registrarme
+              </Button>
+              <Button
+                mode="text"
+                onPress={() => navigation.navigate('ForgotPassword')}
+                textColor="#a855f7"
+                compact
+              >
+                Olvidé mi contraseña
+              </Button>
+            </View>
+          </Card.Content>
+        </Card>
 
         <Toast />
       </ScrollView>
