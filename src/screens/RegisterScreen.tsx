@@ -1,6 +1,6 @@
 // src/screens/RegisterScreen.tsx
 
-import React, { useState, useRef } from 'react';
+import React, { useState } from 'react';
 import {
   View,
   Text,
@@ -12,14 +12,15 @@ import {
   Button,
   KeyboardAvoidingView,
   Platform,
+  Alert,
 } from 'react-native';
 import DateTimePicker, {
   DateTimePickerEvent,
 } from '@react-native-community/datetimepicker';
-import RNPickerSelect from 'react-native-picker-select';
 import axios from 'axios';
 import Toast from 'react-native-toast-message';
 import { API_URL } from '@env';
+import CustomPicker from '../components/CustomPicker';
 
 export default function RegisterScreen({ navigation }: any) {
   const [fullName, setFullName]               = useState('');
@@ -33,13 +34,43 @@ export default function RegisterScreen({ navigation }: any) {
 
   const [country, setCountry]   = useState<string|null>(null);
   const [language, setLanguage] = useState<string|null>(null);
+
+  const handleCountryChange = (value: string) => {
+    console.log('RegisterScreen: Country changed to:', value);
+    setCountry(value);
+  };
+
+  const handleLanguageChange = (value: string) => {
+    console.log('RegisterScreen: Language changed to:', value);
+    setLanguage(value);
+  };
   const [favoriteGenres, setFavoriteGenres] = useState<string[]>([]);
   const [favoriteMedia, setFavoriteMedia]   = useState('');
 
   const [loading, setLoading] = useState(false);
 
-  const countryRef  = useRef<RNPickerSelect>(null);
-  const languageRef = useRef<RNPickerSelect>(null);
+  const countryOptions = [
+    { label: 'Chile', value: 'CL' },
+    { label: 'México', value: 'MX' },
+    { label: 'Argentina', value: 'AR' },
+    { label: 'España', value: 'ES' },
+    { label: 'Colombia', value: 'CO' },
+    { label: 'Perú', value: 'PE' },
+    { label: 'Venezuela', value: 'VE' },
+    { label: 'Ecuador', value: 'EC' },
+    { label: 'Bolivia', value: 'BO' },
+    { label: 'Uruguay', value: 'UY' },
+    { label: 'Paraguay', value: 'PY' },
+    { label: 'Estados Unidos', value: 'US' },
+    { label: 'Canadá', value: 'CA' },
+  ];
+
+  const languageOptions = [
+    { label: 'Español', value: 'es' },
+    { label: 'Inglés', value: 'en' },
+    { label: 'Portugués', value: 'pt' },
+    { label: 'Francés', value: 'fr' },
+  ];
 
   const genres = [
   'Acción',
@@ -118,6 +149,7 @@ export default function RegisterScreen({ navigation }: any) {
         <ScrollView
           contentContainerStyle={styles.scroll}
           keyboardShouldPersistTaps="handled"
+          showsVerticalScrollIndicator={false}
         >
           <Text style={styles.title}>Crear cuenta</Text>
 
@@ -200,59 +232,19 @@ export default function RegisterScreen({ navigation }: any) {
             </View>
           </Modal>
 
-          <View style={styles.pickerWrapper}>
-            <Text style={styles.pickerLabel}>País</Text>
-            <TouchableOpacity
-              style={styles.pickerTouchable}
-              onPress={() => countryRef.current?.togglePicker()}
-            >
-              <Text style={country ? styles.pickerValue : styles.pickerPlaceholder}>
-                {country || 'Selecciona país'}
-              </Text>
-            </TouchableOpacity>
-            <RNPickerSelect
-              pickerProps={{ itemStyle: { color: '#000' } }}
-              ref={countryRef}
-              onValueChange={setCountry}
-              value={country}
-              items={[
-                { label: 'Selecciona país', value: null },
-                { label: 'Chile', value: 'CL' },
-                { label: 'México', value: 'MX' },
-                { label: 'Argentina', value: 'AR' },
-                { label: 'España', value: 'ES' },
-              ]}
-              placeholder={{}}
-              useNativeAndroidPickerStyle={false}
-              style={pickerHiddenStyles}
-            />
-          </View>
+          <CustomPicker
+            label="País"
+            value={country}
+            options={countryOptions}
+            onChange={handleCountryChange}
+          />
 
-          <View style={styles.pickerWrapper}>
-            <Text style={styles.pickerLabel}>Idioma</Text>
-            <TouchableOpacity
-              style={styles.pickerTouchable}
-              onPress={() => languageRef.current?.togglePicker()}
-            >
-              <Text style={language ? styles.pickerValue : styles.pickerPlaceholder}>
-                {language || 'Selecciona idioma'}
-              </Text>
-            </TouchableOpacity>
-            <RNPickerSelect
-              pickerProps={{ itemStyle: { color: '#000' } }}
-              ref={languageRef}
-              onValueChange={setLanguage}
-              value={language}
-              items={[
-                { label: 'Selecciona idioma', value: null },
-                { label: 'Español', value: 'es' },
-                { label: 'Inglés', value: 'en' },
-              ]}
-              placeholder={{}}
-              useNativeAndroidPickerStyle={false}
-              style={pickerHiddenStyles}
-            />
-          </View>
+          <CustomPicker
+            label="Idioma"
+            value={language}
+            options={languageOptions}
+            onChange={handleLanguageChange}
+          />
 
           <Text style={styles.sectionLabel}>Géneros favoritos</Text>
           <View style={styles.genresContainer}>
@@ -319,11 +311,7 @@ const styles = StyleSheet.create({
   input:            { backgroundColor: '#222', color: '#fff', borderRadius: 8, padding: 14, marginBottom: 16 },
   textarea:         { height: 100, textAlignVertical: 'top' },
   inputText:        { color: '#fff' },
-  pickerWrapper:    { marginBottom: 16, zIndex: 1000 },
-  pickerLabel:      { color: '#ccc', marginBottom: 4 },
-  pickerTouchable:  { backgroundColor: '#222', borderRadius: 8, padding: 14 },
-  pickerPlaceholder:{ color: '#888' },
-  pickerValue:      { color: '#000' },
+
   sectionLabel:     { color: '#fff', fontSize: 16, fontWeight: '600', marginBottom: 8 },
   genresContainer:  { flexDirection: 'row', flexWrap: 'wrap', marginBottom: 24 },
   genreButton:      { paddingVertical: 6, paddingHorizontal: 12, borderRadius: 16, borderWidth: 1, margin: 4 },
@@ -340,8 +328,3 @@ const styles = StyleSheet.create({
   modalContent:    { margin: 24, backgroundColor: '#fff', borderRadius: 8, overflow: 'hidden' },
   modalButtons:    { flexDirection: 'row', justifyContent: 'space-around', padding: 8 },
 });
-
-const pickerHiddenStyles = {
-  inputIOS:     { height: 0, opacity: 0 },
-  inputAndroid: { height: 0, opacity: 0 },
-};

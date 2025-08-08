@@ -26,12 +26,29 @@ export default function CustomPicker({ label, value, options, onChange }: Props)
 
   const selectedLabel = options.find((opt) => opt.value === value)?.label;
 
+  const handleOptionPress = (selectedValue: string) => {
+    console.log('CustomPicker: Option selected:', selectedValue, 'for label:', label);
+    onChange(selectedValue);
+    setVisible(false);
+  };
+
+  const handleOpenPicker = () => {
+    console.log('CustomPicker: Opening picker for:', label, 'with', options.length, 'options');
+    setVisible(true);
+  };
+
+  const handleClosePicker = () => {
+    console.log('CustomPicker: Closing picker for:', label);
+    setVisible(false);
+  };
+
   return (
     <View style={styles.container}>
       <Text style={styles.label}>{label}</Text>
       <TouchableOpacity
-        onPress={() => setVisible(true)}
+        onPress={handleOpenPicker}
         style={styles.input}
+        activeOpacity={0.7}
       >
         <Text style={styles.inputText}>
           {selectedLabel || `Selecciona ${label.toLowerCase()}`}
@@ -39,26 +56,36 @@ export default function CustomPicker({ label, value, options, onChange }: Props)
         <Ionicons name="chevron-down" size={18} color="#aaa" />
       </TouchableOpacity>
 
-      <Modal visible={visible} transparent animationType="fade">
-        <TouchableOpacity style={styles.modalBackground} onPress={() => setVisible(false)}>
+      <Modal 
+        visible={visible} 
+        transparent 
+        animationType="slide"
+      >
+        <View style={styles.modalBackground}>
           <View style={styles.modalContent}>
+            <View style={styles.modalHeader}>
+              <Text style={styles.modalTitle}>{label}</Text>
+              <TouchableOpacity onPress={handleClosePicker}>
+                <Ionicons name="close" size={24} color="#fff" />
+              </TouchableOpacity>
+            </View>
+            
             <FlatList
               data={options}
               keyExtractor={(item) => item.value}
               renderItem={({ item }) => (
                 <TouchableOpacity
-                  onPress={() => {
-                    onChange(item.value);
-                    setVisible(false);
-                  }}
+                  onPress={() => handleOptionPress(item.value)}
                   style={styles.option}
+                  activeOpacity={0.7}
                 >
                   <Text style={styles.optionText}>{item.label}</Text>
                 </TouchableOpacity>
               )}
+              showsVerticalScrollIndicator={false}
             />
           </View>
-        </TouchableOpacity>
+        </View>
       </Modal>
     </View>
   );
@@ -78,15 +105,31 @@ const styles = StyleSheet.create({
   inputText: { color: 'white' },
   modalBackground: {
     flex: 1,
-    backgroundColor: 'rgba(0,0,0,0.7)',
+    backgroundColor: 'rgba(0,0,0,0.9)',
     justifyContent: 'center',
+    alignItems: 'center',
     padding: 20,
   },
   modalContent: {
     backgroundColor: '#1e1e1e',
     borderRadius: 10,
-    maxHeight: '50%',
+    width: '90%',
+    maxHeight: '80%',
     paddingVertical: 10,
+  },
+  modalHeader: {
+    flexDirection: 'row',
+    justifyContent: 'space-between',
+    alignItems: 'center',
+    paddingHorizontal: 16,
+    paddingVertical: 8,
+    borderBottomColor: '#333',
+    borderBottomWidth: 1,
+  },
+  modalTitle: {
+    color: 'white',
+    fontSize: 18,
+    fontWeight: 'bold',
   },
   option: {
     paddingVertical: 12,
