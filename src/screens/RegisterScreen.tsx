@@ -121,7 +121,7 @@ export default function RegisterScreen({ navigation }: any) {
 
     setLoading(true);
     try {
-      const response = await axios.post(`${API_URL}/auth/register`, {
+      const response = await axios.post(`${API_URL}/users`, {
         fullName,
         email,
         password,
