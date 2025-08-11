@@ -16,14 +16,22 @@
       "supportsTablet": true
     },
     "android": {
+      "package": "cl.edicloud.recomiendameapp",
+      "edgeToEdgeEnabled": true,
+      "permissions": [],
       "adaptiveIcon": {
         "foregroundImage": "./assets/adaptive-icon.png",
         "backgroundColor": "#ffffff"
-      },
-      "edgeToEdgeEnabled": true
+      }
     },
     "web": {
       "favicon": "./assets/favicon.png"
-    }
+    },
+    "extra": {
+      "eas": {
+        "projectId": "c37a421b-7fd9-434e-a250-e14ec36e1618"
+      }
+    },
+    "owner": "drakonio"
   }
 }

@@ -17,17 +17,13 @@ import {
   Button as PaperButton, 
   Card, 
   Chip,
-  Divider,
-  Portal,
-  Dialog
+  Divider
 } from 'react-native-paper';
-import DateTimePicker, {
-  DateTimePickerEvent,
-} from '@react-native-community/datetimepicker';
 import axios from 'axios';
 import Toast from 'react-native-toast-message';
 import { API_URL } from '@env';
 import CustomPicker from '../components/CustomPicker';
+import DatePicker from '../components/DatePicker';
 
 export default function RegisterScreen({ navigation }: any) {
   const [fullName, setFullName]               = useState('');
@@ -42,9 +38,7 @@ export default function RegisterScreen({ navigation }: any) {
   const [showPassword, setShowPassword]       = useState(false);
   const [showConfirmPassword, setShowConfirmPassword] = useState(false);
 
-  // Estado del date picker
-  const [showDatePicker, setShowDatePicker] = useState(false);
-  const [tempDate, setTempDate] = useState(new Date());
+
 
   const genres = [
     'Acción', 'Aventura', 'Animación', 'Comedia', 'Crimen',
@@ -245,21 +239,12 @@ export default function RegisterScreen({ navigation }: any) {
               }}
             />
 
-            <PaperButton
-              mode="outlined"
-              onPress={() => {
-                setTempDate(birthDate ? new Date(birthDate) : new Date());
-                setShowDatePicker(true);
-              }}
-              style={{ marginBottom: 16 }}
-              theme={{ 
-                colors: { 
-                  outline: '#444'
-                } 
-              }}
-            >
-              {birthDate || 'Fecha de nacimiento (opcional)'}
-            </PaperButton>
+            <DatePicker
+              value={birthDate}
+              onChange={setBirthDate}
+              label="Fecha de nacimiento (opcional)"
+              maximumDate={new Date()}
+            />
 
             <CustomPicker
               label="País"
@@ -325,44 +310,7 @@ export default function RegisterScreen({ navigation }: any) {
           </Card.Content>
         </Card>
 
-        {/* Dialog para fecha de nacimiento */}
-        <Portal>
-          <Dialog visible={showDatePicker} onDismiss={() => setShowDatePicker(false)}>
-            <Dialog.Title>Fecha de nacimiento</Dialog.Title>
-            <Dialog.Content>
-              <DateTimePicker
-                value={tempDate}
-                mode="date"
-                display="spinner"
-                maximumDate={new Date()}
-                locale="es-ES"
-                themeVariant="light"
-                textColor="#000"
-                onChange={(
-                  _event: DateTimePickerEvent,
-                  selected?: Date
-                ) => {
-                  if (selected) setTempDate(selected);
-                }}
-                style={{ backgroundColor: '#fff' }}
-              />
-            </Dialog.Content>
-            <Dialog.Actions>
-              <PaperButton onPress={() => setShowDatePicker(false)}>
-                Cancelar
-              </PaperButton>
-              <PaperButton onPress={() => {
-                const y = tempDate.getFullYear();
-                const m = String(tempDate.getMonth() + 1).padStart(2, '0');
-                const D = String(tempDate.getDate()).padStart(2, '0');
-                setBirthDate(`${y}-${m}-${D}`);
-                setShowDatePicker(false);
-              }}>
-                Aceptar
-              </PaperButton>
-            </Dialog.Actions>
-          </Dialog>
-        </Portal>
+
 
         <Toast />
       </ScrollView>
