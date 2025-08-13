@@ -20,7 +20,7 @@ import {
 } from 'react-native-paper';
 import AsyncStorage from '@react-native-async-storage/async-storage';
 import axios from 'axios';
-import { API_URL } from '@env';
+import { ENV } from '../config/env';
 import Toast from 'react-native-toast-message';
 import StarRating from 'react-native-star-rating-widget';
 import { useFocusEffect } from '@react-navigation/native';
@@ -81,10 +81,10 @@ export default function SeenScreen() {
 
       const [seenRes, ratingsRes] = await Promise.all([
         axios.get(
-          `${API_URL}/seen?take=${take}&skip=${skip}&search=${searchQuery}`,
+          `${ENV.API_URL}/seen?take=${take}&skip=${skip}&search=${searchQuery}`,
           { headers: { Authorization: `Bearer ${token}` } }
         ),
-        axios.get(`${API_URL}/ratings?take=1000`, {
+        axios.get(`${ENV.API_URL}/ratings?take=1000`, {
           headers: { Authorization: `Bearer ${token}` },
         }),
       ]);
@@ -148,7 +148,7 @@ export default function SeenScreen() {
     try {
       const token = await AsyncStorage.getItem('token');
       await axios.post(
-        `${API_URL}/ratings`,
+        `${ENV.API_URL}/ratings`,
         {
           tmdbId: ratingModalItem.tmdbId,
           title: ratingModalItem.tmdb?.title || '',
@@ -192,7 +192,7 @@ export default function SeenScreen() {
   const handleRemoveSeen = async (tmdbId: number) => {
     try {
       const token = await AsyncStorage.getItem('token');
-      await axios.delete(`${API_URL}/seen/${tmdbId}`, {
+      await axios.delete(`${ENV.API_URL}/seen/${tmdbId}`, {
         headers: { Authorization: `Bearer ${token}` },
       });
 
@@ -218,7 +218,7 @@ export default function SeenScreen() {
     if (!ratingModalItem) return;
     try {
       const token = await AsyncStorage.getItem('token');
-      await axios.delete(`${API_URL}/ratings/${ratingModalItem.tmdbId}`, {
+      await axios.delete(`${ENV.API_URL}/ratings/${ratingModalItem.tmdbId}`, {
         headers: { Authorization: `Bearer ${token}` },
       });
 

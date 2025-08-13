@@ -10,7 +10,7 @@ import {
   Card 
 } from 'react-native-paper';
 import axios from 'axios';
-import { API_URL } from '@env';
+import { ENV } from '../config/env';
 import Toast from 'react-native-toast-message';
 
 export default function ForgotPasswordScreen({ navigation }: any) {
@@ -22,7 +22,7 @@ export default function ForgotPasswordScreen({ navigation }: any) {
     setLoading(true);
 
     try {
-      await axios.post(`${API_URL}/auth/request-password-reset`, { email });
+      await axios.post(`${ENV.API_URL}/auth/request-password-reset`, { email });
       Toast.show({
         type: 'success',
         text1: 'Enviado',

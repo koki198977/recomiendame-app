@@ -15,7 +15,7 @@ import {
 import axios from 'axios';
 import AsyncStorage from '@react-native-async-storage/async-storage';
 import Toast from 'react-native-toast-message';
-import { API_URL } from '@env';
+import { ENV } from '../config/env';
 import { useFocusEffect } from '@react-navigation/native';
 
 // --- react-native-paper (popup detalle)
@@ -87,7 +87,7 @@ export default function WishListScreen() {
       const headers = await getAuthHeaders();
       if (!('Authorization' in headers)) return;
 
-      const res = await axios.get(`${API_URL}/seen?take=1000`, { headers });
+      const res = await axios.get(`${ENV.API_URL}/seen?take=1000`, { headers });
       const ids: number[] = (res.data?.items || res.data?.seen?.items || res.data || [])
         .map((i: any) => i.tmdbId)
         .filter((x: any) => typeof x === 'number');
@@ -115,7 +115,7 @@ export default function WishListScreen() {
         ...(localSearch ? { search: localSearch } : {}),
       });
 
-      const res = await axios.get(`${API_URL}/wishlist?${params}`, { headers });
+      const res = await axios.get(`${ENV.API_URL}/wishlist?${params}`, { headers });
 
       const newItems: WishItem[] = res.data?.wishlist?.items || [];
       const totalPages = res.data?.wishlist?.totalPages ?? 1;
@@ -152,7 +152,7 @@ export default function WishListScreen() {
       const headers = await getAuthHeaders();
       if (!('Authorization' in headers)) return;
 
-      await axios.delete(`${API_URL}/wishlist/${tmdbId}`, { headers });
+      await axios.delete(`${ENV.API_URL}/wishlist/${tmdbId}`, { headers });
       setItems((prev) => prev.filter((x) => (x.tmdb?.id ?? x.tmdbId) !== tmdbId));
       Toast.show({ type: 'success', text1: 'Eliminado de Deseados' });
     } catch (e) {
@@ -182,14 +182,14 @@ export default function WishListScreen() {
       if (!('Authorization' in headers)) return;
 
       await axios.post(
-        `${API_URL}/seen`,
+        `${ENV.API_URL}/seen`,
         { tmdbId, mediaType },
         { headers: { ...headers, 'Content-Type': 'application/json' } },
       );
 
       setSeenIds((prev) => new Set(prev).add(tmdbId));
 
-      await axios.delete(`${API_URL}/wishlist/${tmdbId}`, { headers });
+      await axios.delete(`${ENV.API_URL}/wishlist/${tmdbId}`, { headers });
       setItems((prev) => prev.filter((x) => (x.tmdb?.id ?? x.tmdbId) !== tmdbId));
 
       // Si el modal está abierto de ese ítem, lo cierro
@@ -234,7 +234,7 @@ export default function WishListScreen() {
       }
 
       // Endpoint opcional para enriquecer datos del TMDB
-      const { data } = await axios.get(`${API_URL}/tmdb/${base.id}`, { headers });
+      const { data } = await axios.get(`${ENV.API_URL}/tmdb/${base.id}`, { headers });
       const enriched = {
         ...base,
         title: data?.title ?? base.title,

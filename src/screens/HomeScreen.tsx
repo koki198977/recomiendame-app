@@ -24,7 +24,7 @@ import {
 import AsyncStorage from '@react-native-async-storage/async-storage';
 import axios from 'axios';
 import Toast from 'react-native-toast-message';
-import { API_URL } from '@env';
+import { ENV } from '../config/env';
 import { FontAwesome, MaterialIcons, Entypo } from '@expo/vector-icons';
 import * as Progress from 'react-native-progress';
 import { useFocusEffect } from '@react-navigation/native';
@@ -67,7 +67,7 @@ export default function HomeScreen() {
     try {
       if (!refreshing) setLoading(true);
       const token = await AsyncStorage.getItem('token');
-      const { data } = await axios.get(`${API_URL}/dashboard/stats`, {
+      const { data } = await axios.get(`${ENV.API_URL}/dashboard/stats`, {
         headers: { Authorization: `Bearer ${token}` },
       });
       setStats(data.stats);

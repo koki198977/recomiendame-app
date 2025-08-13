@@ -26,7 +26,7 @@ import DateTimePicker, {
   DateTimePickerEvent,
 } from '@react-native-community/datetimepicker';
 import CustomPicker from '../components/CustomPicker';
-import { API_URL } from '@env';
+import { ENV } from '../config/env';
 
 // parsea un "YYYY-MM-DD" a Date en zona local
 const parseLocalDate = (dateStr: string): Date => {
@@ -92,7 +92,7 @@ export default function ProfileScreen({ navigation }: any) {
       try {
         const token = await AsyncStorage.getItem('token');
         const userId = await AsyncStorage.getItem('userId');
-        const res = await axios.get(`${API_URL}/users/${userId}`, {
+        const res = await axios.get(`${ENV.API_URL}/users/${userId}`, {
           headers: { Authorization: `Bearer ${token}` },
         });
         setUser(res.data);
@@ -129,7 +129,7 @@ export default function ProfileScreen({ navigation }: any) {
       const token = await AsyncStorage.getItem('token');
       const userId = await AsyncStorage.getItem('userId');
       await axios.put(
-        `${API_URL}/users/${userId}`,
+        `${ENV.API_URL}/users/${userId}`,
         {
           fullName,
           birthDate: birthDate

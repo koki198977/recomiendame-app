@@ -21,7 +21,7 @@ import {
 } from 'react-native-paper';
 import axios from 'axios';
 import Toast from 'react-native-toast-message';
-import { API_URL } from '@env';
+import { ENV } from '../config/env';
 import CustomPicker from '../components/CustomPicker';
 import DatePicker from '../components/DatePicker';
 
@@ -115,7 +115,7 @@ export default function RegisterScreen({ navigation }: any) {
 
     setLoading(true);
     try {
-      const response = await axios.post(`${API_URL}/users`, {
+      const response = await axios.post(`${ENV.API_URL}/users`, {
         fullName,
         email,
         password,

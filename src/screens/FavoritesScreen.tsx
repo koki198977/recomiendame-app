@@ -19,7 +19,7 @@ import {
 import axios from 'axios';
 import AsyncStorage from '@react-native-async-storage/async-storage';
 import Toast from 'react-native-toast-message';
-import { API_URL } from '@env';
+import { ENV } from '../config/env';
 import { useFocusEffect } from '@react-navigation/native';
 import { Feather } from '@expo/vector-icons';
 
@@ -58,7 +58,7 @@ export default function FavoritesScreen() {
         ...(search ? { search } : {}),
       });
 
-      const res = await axios.get(`${API_URL}/favorites?${params.toString()}`, {
+      const res = await axios.get(`${ENV.API_URL}/favorites?${params.toString()}`, {
         headers: { Authorization: `Bearer ${token}` },
       });
 
@@ -98,7 +98,7 @@ export default function FavoritesScreen() {
     try {
       const token = await AsyncStorage.getItem('token');
       if (!token) return;
-      const res = await axios.get(`${API_URL}/search?q=${encodeURIComponent(searchQuery)}`, {
+      const res = await axios.get(`${ENV.API_URL}/search?q=${encodeURIComponent(searchQuery)}`, {
         headers: { Authorization: `Bearer ${token}` },
       });
       setSearchResults(res.data.results || []);
@@ -117,7 +117,7 @@ export default function FavoritesScreen() {
       if (!token) return;
 
       await axios.post(
-        `${API_URL}/favorites`,
+        `${ENV.API_URL}/favorites`,
         { tmdbId, mediaType, title },
         { headers: { Authorization: `Bearer ${token}` } }
       );
@@ -140,7 +140,7 @@ export default function FavoritesScreen() {
       const token = await AsyncStorage.getItem('token');
       if (!token) return;
 
-      await axios.delete(`${API_URL}/favorites/${tmdbId}`, {
+      await axios.delete(`${ENV.API_URL}/favorites/${tmdbId}`, {
         headers: { Authorization: `Bearer ${token}` },
       });
 

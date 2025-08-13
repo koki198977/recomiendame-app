@@ -24,7 +24,7 @@ import {
 } from 'react-native-paper';
 import AsyncStorage from '@react-native-async-storage/async-storage';
 import axios from 'axios';
-import { API_URL } from '@env';
+import { ENV } from '../config/env';
 import Toast from 'react-native-toast-message';
 
 interface Recommendation {
@@ -124,10 +124,10 @@ export default function RecommendationsScreen() {
         const headers = { Authorization: `Bearer ${token}` };
 
         const [recsRes, favsRes, seenRes, wishRes] = await Promise.all([
-          axios.post(`${API_URL}/recommendations`, {}, { headers }),
-          axios.get(`${API_URL}/favorites?take=1000`, { headers }),
-          axios.get(`${API_URL}/seen?take=1000`, { headers }),
-          axios.get(`${API_URL}/wishlist?take=1000`, { headers }),
+          axios.post(`${ENV.API_URL}/recommendations`, {}, { headers }),
+          axios.get(`${ENV.API_URL}/favorites?take=1000`, { headers }),
+          axios.get(`${ENV.API_URL}/seen?take=1000`, { headers }),
+          axios.get(`${ENV.API_URL}/wishlist?take=1000`, { headers }),
         ]);
 
         const recArray: Recommendation[] = Array.isArray(recsRes.data)
@@ -166,7 +166,7 @@ export default function RecommendationsScreen() {
     try {
       const token = await AsyncStorage.getItem('token');
       await axios.post(
-        `${API_URL}/seen`,
+        `${ENV.API_URL}/seen`,
         { tmdbId: item.tmdbId, mediaType: item.mediaType },
         { headers: { Authorization: `Bearer ${token}` } }
       );
@@ -194,7 +194,7 @@ export default function RecommendationsScreen() {
     try {
       const token = await AsyncStorage.getItem('token');
       await axios.post(
-        `${API_URL}/favorites`,
+        `${ENV.API_URL}/favorites`,
         { tmdbId: item.tmdbId, title: item.title, mediaType: item.mediaType },
         { headers: { Authorization: `Bearer ${token}` } }
       );
@@ -224,7 +224,7 @@ export default function RecommendationsScreen() {
     try {
       const token = await AsyncStorage.getItem('token');
       await axios.post(
-        `${API_URL}/wishlist`,
+        `${ENV.API_URL}/wishlist`,
         { tmdbId: item.tmdbId, mediaType: item.mediaType },
         { headers: { Authorization: `Bearer ${token}` } }
       );
@@ -257,7 +257,7 @@ export default function RecommendationsScreen() {
       if (initialPrompt.trim()) body.feedback = initialPrompt.trim();
       if (likedItem) body.tmdbId = likedItem.tmdbId;
 
-      const res = await axios.post(`${API_URL}/recommendations`, body, {
+      const res = await axios.post(`${ENV.API_URL}/recommendations`, body, {
         headers: { Authorization: `Bearer ${token}` },
       });
 

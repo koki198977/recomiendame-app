@@ -17,7 +17,7 @@ import {
 import AsyncStorage from '@react-native-async-storage/async-storage';
 import axios from 'axios';
 import Toast from 'react-native-toast-message';
-import { API_URL } from '@env';
+import { ENV } from '../config/env';
 
 export default function LoginScreen({ navigation }: any) {
   const [email, setEmail]       = useState('');
@@ -30,11 +30,11 @@ export default function LoginScreen({ navigation }: any) {
     setLoading(true);
     
     try {
-      const response = await axios.post(`${API_URL}/auth/login`, { email, password });
+      const response = await axios.post(`${ENV.API_URL}/auth/login`, { email, password });
       const token    = response.data.access_token;
 
       await AsyncStorage.setItem('token', token);
-      const meRes = await axios.get(`${API_URL}/users/me`, {
+      const meRes = await axios.get(`${ENV.API_URL}/users/me`, {
         headers: { Authorization: `Bearer ${token}` },
       });
       await AsyncStorage.setItem('userId', meRes.data.id);
