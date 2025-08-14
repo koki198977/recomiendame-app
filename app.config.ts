@@ -2,8 +2,8 @@ import 'dotenv/config';
 import { ExpoConfig } from '@expo/config';
 
 const config: ExpoConfig = {
-  name: 'recomiendame-app',
-  slug: 'recomiendame-app',
+  name: 'recomendador-app',
+  slug: 'recomendador-app',
   extra: {
     API_URL: process.env.API_URL,
     TMDB_API_KEY: process.env.TMDB_API_KEY,
