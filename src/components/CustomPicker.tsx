@@ -1,8 +1,6 @@
 import React, { useState } from 'react';
 import {
   View,
-  Modal,
-  TouchableOpacity,
   FlatList,
   StyleSheet,
 } from 'react-native';
@@ -72,7 +70,7 @@ export default function CustomPicker({ label, value, options, onChange }: Props)
       </Button>
 
       <Portal>
-        <Dialog visible={visible} onDismiss={handleClosePicker} style={styles.dialog}>
+        <Dialog visible={!!visible} onDismiss={handleClosePicker} style={styles.dialog}>
           <Dialog.Title>{label}</Dialog.Title>
           <Dialog.Content>
             <Searchbar

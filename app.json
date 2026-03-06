@@ -1,28 +1,47 @@
 {
   "expo": {
-    "name": "recomendador-app",
-    "slug": "recomendador-app",
+    "name": "Recomiéndame",
+    "slug": "recomiendame-app",
     "version": "1.0.0",
     "orientation": "portrait",
     "icon": "./assets/icon.png",
-    "userInterfaceStyle": "light",
+    "userInterfaceStyle": "dark",
     "newArchEnabled": true,
     "splash": {
       "image": "./assets/splash-icon.png",
       "resizeMode": "contain",
-      "backgroundColor": "#ffffff"
+      "backgroundColor": "#000000"
     },
     "ios": {
-      "supportsTablet": true
+      "supportsTablet": true,
+      "bundleIdentifier": "cl.edicloud.recomiendameapp",
+      "infoPlist": {
+        "LSApplicationQueriesSchemes": ["youtube", "vnd.youtube"]
+      }
     },
     "android": {
       "package": "cl.edicloud.recomiendameapp",
+      "versionCode": 1,
       "edgeToEdgeEnabled": true,
-      "permissions": [],
+      "permissions": ["android.permission.INTERNET"],
       "adaptiveIcon": {
         "foregroundImage": "./assets/adaptive-icon.png",
-        "backgroundColor": "#ffffff"
-      }
+        "backgroundColor": "#000000"
+      },
+      "intentFilters": [
+        {
+          "action": "VIEW",
+          "data": [
+            {
+              "scheme": "https"
+            },
+            {
+              "scheme": "http"
+            }
+          ],
+          "category": ["BROWSABLE", "DEFAULT"]
+        }
+      ]
     },
     "web": {
       "favicon": "./assets/favicon.png"

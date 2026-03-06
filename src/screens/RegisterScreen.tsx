@@ -128,14 +128,24 @@ export default function RegisterScreen({ navigation }: any) {
       Toast.show({
         type: 'success',
         text1: '✅ Registro exitoso',
-        text2: 'Tu cuenta ha sido creada correctamente',
+        text2: 'Redirigiendo al inicio de sesión...',
       });
+
+      // Limpiar campos
+      setFullName('');
+      setEmail('');
+      setPassword('');
+      setConfirmPassword('');
+      setBirthDate('');
+      setCountry(null);
+      setLanguage(null);
+      setFavoriteGenres([]);
 
       setTimeout(() => {
         navigation.replace('Login');
       }, 1500);
     } catch (error: any) {
-      console.error(error);
+      console.error('Error en registro:', error);
       const serverMessage = error.response?.data?.message;
       Toast.show({
         type: 'error',
@@ -303,7 +313,7 @@ export default function RegisterScreen({ navigation }: any) {
               mode="text"
               onPress={() => navigation.navigate('Login')}
               textColor="#a855f7"
-              compact
+              compact={true}
             >
               ¿Ya tienes cuenta? Inicia sesión
             </PaperButton>

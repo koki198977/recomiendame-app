@@ -92,22 +92,51 @@ export default function ProfileScreen({ navigation }: any) {
       try {
         const token = await AsyncStorage.getItem('token');
         const userId = await AsyncStorage.getItem('userId');
+        
+        if (!token || !userId) {
+          Toast.show({
+            type: 'error',
+            text1: 'Sesión no válida',
+            text2: 'Por favor inicia sesión nuevamente',
+          });
+          navigation.replace('Login');
+          return;
+        }
+        
         const res = await axios.get(`${ENV.API_URL}/users/${userId}`, {
           headers: { Authorization: `Bearer ${token}` },
         });
+        
         setUser(res.data);
         setFullName(res.data.fullName || '');
         setBirthDate(res.data.birthDate?.slice(0, 10) || '');
         setCountry(res.data.country || '');
         setLanguage(res.data.language || '');
         setFavoriteGenres(res.data.favoriteGenres || []);
-      } catch (err) {
+      } catch (err: any) {
         console.error('Error al cargar perfil:', err);
-        Toast.show({
-          type: 'error',
-          text1: 'Error',
-          text2: 'No se pudo cargar el perfil',
-        });
+        
+        if (err.response?.status === 404) {
+          Toast.show({
+            type: 'error',
+            text1: 'Usuario no encontrado',
+            text2: 'Por favor inicia sesión nuevamente',
+          });
+          navigation.replace('Login');
+        } else if (err.response?.status === 401) {
+          Toast.show({
+            type: 'error',
+            text1: 'Sesión expirada',
+            text2: 'Por favor inicia sesión nuevamente',
+          });
+          navigation.replace('Login');
+        } else {
+          Toast.show({
+            type: 'error',
+            text1: 'Error',
+            text2: 'No se pudo cargar el perfil',
+          });
+        }
       } finally {
         setLoading(false);
       }
@@ -180,7 +209,7 @@ export default function ProfileScreen({ navigation }: any) {
           style={{ backgroundColor: '#a855f7' }}
         />
         <Text variant="titleMedium" style={{ color: '#fff', marginTop: 16 }}>
-          {user.email}
+          {user?.email || 'Usuario'}
         </Text>
       </View>
 
