@@ -33,7 +33,7 @@ const config: ExpoConfig = {
     API_URL: process.env.API_URL,
     TMDB_API_KEY: process.env.TMDB_API_KEY,
     eas: {
-      projectId: 'c37a421b-7fd9-434e-a250-e14ec36e1618',
+      projectId: '210898d5-ff3c-443f-8119-8b0cdd9d4f3b',
     },
   },
 };

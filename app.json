@@ -6,7 +6,6 @@
     "orientation": "portrait",
     "icon": "./assets/icon.png",
     "userInterfaceStyle": "dark",
-    "newArchEnabled": true,
     "splash": {
       "image": "./assets/splash-icon.png",
       "resizeMode": "contain",
@@ -22,7 +21,6 @@
     "android": {
       "package": "cl.edicloud.recomiendameapp",
       "versionCode": 1,
-      "edgeToEdgeEnabled": true,
       "permissions": ["android.permission.INTERNET"],
       "adaptiveIcon": {
         "foregroundImage": "./assets/adaptive-icon.png",
@@ -41,16 +39,15 @@
           ],
           "category": ["BROWSABLE", "DEFAULT"]
         }
-      ]
+      ],
+      "gradleProperties": {
+        "android.useAndroidX": "true",
+        "android.enableJetifier": "true"
+      }
     },
     "web": {
       "favicon": "./assets/favicon.png"
     },
-    "extra": {
-      "eas": {
-        "projectId": "c37a421b-7fd9-434e-a250-e14ec36e1618"
-      }
-    },
-    "owner": "drakonio"
+    "owner": "kokialvarez78"
   }
 }
