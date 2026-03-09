@@ -25,7 +25,7 @@
     },
     "production": {
       "android": {
-        "buildType": "apk"
+        "buildType": "app-bundle"
       },
       "env": {
         "API_URL": "https://api.recomiendameapp.cl",
