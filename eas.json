@@ -6,18 +6,30 @@
   "build": {
     "development": {
       "developmentClient": true,
-      "distribution": "internal"
+      "distribution": "internal",
+      "env": {
+        "API_URL": "https://api.recomiendameapp.cl",
+        "TMDB_API_KEY": "aa9a919b691c3d5de75c375e0583f1af"
+      }
     },
     "preview": {
       "distribution": "internal",
       "android": {
         "buildType": "apk",
         "ndk": "26.1.10909125"
+      },
+      "env": {
+        "API_URL": "https://api.recomiendameapp.cl",
+        "TMDB_API_KEY": "aa9a919b691c3d5de75c375e0583f1af"
       }
     },
     "production": {
       "android": {
         "buildType": "apk"
+      },
+      "env": {
+        "API_URL": "https://api.recomiendameapp.cl",
+        "TMDB_API_KEY": "aa9a919b691c3d5de75c375e0583f1af"
       }
     }
   },
