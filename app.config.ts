@@ -15,13 +15,13 @@ const config: ExpoConfig = {
   },
   ios: {
     supportsTablet: true,
-    bundleIdentifier: 'com.recomiendame.app',
+    bundleIdentifier: 'com.kokialvarez.recomiendame',
     infoPlist: {
       LSApplicationQueriesSchemes: ['youtube', 'vnd.youtube'],
     },
   },
   android: {
-    package: 'com.recomiendame.app',
+    package: 'com.kokialvarez.recomiendame',
     versionCode: 1,
     adaptiveIcon: {
       foregroundImage: './assets/adaptive-icon.png',

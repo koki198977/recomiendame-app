@@ -13,13 +13,13 @@
     },
     "ios": {
       "supportsTablet": true,
-      "bundleIdentifier": "com.recomiendame.app",
+      "bundleIdentifier": "com.kokialvarez.recomiendame",
       "infoPlist": {
         "LSApplicationQueriesSchemes": ["youtube", "vnd.youtube"]
       }
     },
     "android": {
-      "package": "com.recomiendame.app",
+      "package": "com.kokialvarez.recomiendame",
       "versionCode": 1,
       "permissions": ["android.permission.INTERNET"],
       "adaptiveIcon": {
