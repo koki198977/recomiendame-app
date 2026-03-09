@@ -15,13 +15,13 @@ const config: ExpoConfig = {
   },
   ios: {
     supportsTablet: true,
-    bundleIdentifier: 'cl.edicloud.recomiendame',
+    bundleIdentifier: 'com.recomiendame.app',
     infoPlist: {
       LSApplicationQueriesSchemes: ['youtube', 'vnd.youtube'],
     },
   },
   android: {
-    package: 'cl.edicloud.recomiendame',
+    package: 'com.recomiendame.app',
     versionCode: 1,
     adaptiveIcon: {
       foregroundImage: './assets/adaptive-icon.png',
