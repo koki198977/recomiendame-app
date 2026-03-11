@@ -2,7 +2,7 @@ export default {
   expo: {
     name: "Recomiéndame",
     slug: "recomiendame-app",
-    version: "1.0.0",
+    version: "1.0.1",
     orientation: "portrait",
     icon: "./assets/icon.png",
     userInterfaceStyle: "dark",
@@ -20,7 +20,7 @@ export default {
     },
     android: {
       package: "cl.edicloud.recomiendame",
-      versionCode: 1,
+      versionCode: 2,
       permissions: ["android.permission.INTERNET"],
       adaptiveIcon: {
         foregroundImage: "./assets/adaptive-icon.png",
