@@ -14,7 +14,7 @@
     "ios": {
       "supportsTablet": true,
       "bundleIdentifier": "com.kokialvarez.recomiendame",
-      "buildNumber": "1",
+      "buildNumber": "2",
       "infoPlist": {
         "LSApplicationQueriesSchemes": ["youtube", "vnd.youtube"]
       }
