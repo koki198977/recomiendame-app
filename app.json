@@ -46,9 +46,6 @@
         "android.enableJetifier": "true"
       }
     },
-    "web": {
-      "favicon": "./assets/favicon.png"
-    },
     "owner": "kokialvarez78"
   }
 }
