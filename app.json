@@ -2,7 +2,7 @@
   "expo": {
     "name": "Recomiéndame",
     "slug": "recomiendame-app",
-    "version": "1.0.0",
+    "version": "1.0.1",
     "orientation": "portrait",
     "icon": "./assets/icon.png",
     "userInterfaceStyle": "dark",
@@ -14,13 +14,14 @@
     "ios": {
       "supportsTablet": true,
       "bundleIdentifier": "com.kokialvarez.recomiendame",
+      "buildNumber": "1",
       "infoPlist": {
         "LSApplicationQueriesSchemes": ["youtube", "vnd.youtube"]
       }
     },
     "android": {
       "package": "com.kokialvarez.recomiendame",
-      "versionCode": 1,
+      "versionCode": 2,
       "permissions": ["android.permission.INTERNET"],
       "adaptiveIcon": {
         "foregroundImage": "./assets/adaptive-icon.png",
