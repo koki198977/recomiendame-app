@@ -1,12 +1,15 @@
 {
   "cli": {
     "version": ">= 13.2.0",
-    "appVersionSource": "remote"
+    "appVersionSource": "local"
   },
   "build": {
     "development": {
       "developmentClient": true,
       "distribution": "internal",
+      "ios": {
+        "simulator": true
+      },
       "env": {
         "API_URL": "https://api.recomiendameapp.cl",
         "TMDB_API_KEY": "aa9a919b691c3d5de75c375e0583f1af"
@@ -18,6 +21,9 @@
         "buildType": "apk",
         "ndk": "26.1.10909125"
       },
+      "ios": {
+        "simulator": false
+      },
       "env": {
         "API_URL": "https://api.recomiendameapp.cl",
         "TMDB_API_KEY": "aa9a919b691c3d5de75c375e0583f1af"
@@ -27,6 +33,9 @@
       "android": {
         "buildType": "app-bundle"
       },
+      "ios": {
+        "simulator": false
+      },
       "env": {
         "API_URL": "https://api.recomiendameapp.cl",
         "TMDB_API_KEY": "aa9a919b691c3d5de75c375e0583f1af"
@@ -34,6 +43,16 @@
     }
   },
   "submit": {
-    "production": {}
+    "production": {
+      "android": {
+        "serviceAccountKeyPath": "./google-service-account.json",
+        "track": "production"
+      },
+      "ios": {
+        "appleId": "jorgeuls19@gmail.com",
+        "ascAppId": "6760411789",
+        "appleTeamId": "6N7L44P8FG"
+      }
+    }
   }
 }
