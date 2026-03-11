@@ -58,15 +58,58 @@ export default function RecommendationsScreen() {
   const [promptText, setPromptText] = useState('');
   const [isGenerating, setIsGenerating] = useState(false);
   const [isRefreshing, setIsRefreshing] = useState(false);
+  const [hasCachedData, setHasCachedData] = useState(false);
+
+  // Estados para trackear items marcados
+  const [seenItems, setSeenItems] = useState<Set<number>>(new Set());
+  const [favoriteItems, setFavoriteItems] = useState<Set<number>>(new Set());
+  const [wishlistItems, setWishlistItems] = useState<Set<number>>(new Set());
+  const [dislikedItems, setDislikedItems] = useState<Set<number>>(new Set());
 
   useEffect(() => {
-    fetchRecommendations();
+    loadCachedRecommendations();
     fetchRatings();
+    fetchUserLists();
   }, []);
 
-  const fetchRecommendations = async () => {
+  const loadCachedRecommendations = async () => {
     try {
-      setIsRefreshing(true);
+      const cachedData = await AsyncStorage.getItem('cached_recommendations');
+      const cacheTimestamp = await AsyncStorage.getItem('recommendations_cache_timestamp');
+      
+      const now = Date.now();
+      const cacheAge = cacheTimestamp ? now - parseInt(cacheTimestamp) : Infinity;
+      const fortySeconds = 40 * 1000;
+      
+      // Si el caché existe y tiene menos de 40 segundos, usarlo
+      if (cachedData && cacheAge <= fortySeconds) {
+        const parsed = JSON.parse(cachedData);
+        setRecommendations(parsed);
+        setHasCachedData(true);
+        setLoading(false);
+        console.log('Usando caché válido, edad:', Math.round(cacheAge / 1000), 'segundos');
+      } else {
+        // Caché expirado o no existe, generar nuevas recomendaciones
+        if (cachedData) {
+          console.log('Caché expirado (>40s), generando nuevas recomendaciones...');
+        }
+        // Solo generar si no está ya generando
+        if (!isGenerating) {
+          handleGenerateRecommendations();
+        }
+      }
+    } catch (err) {
+      if (!isGenerating) {
+        handleGenerateRecommendations();
+      }
+    }
+  };
+
+  const fetchRecommendations = async (silent = false) => {
+    try {
+      if (!silent) {
+        setIsRefreshing(true);
+      }
       const token = await AsyncStorage.getItem('token');
       const res = await axios.post(
         `${ENV.API_URL}/recommendations`,
@@ -79,9 +122,16 @@ export default function RecommendationsScreen() {
         : res.data.recommendations || [];
 
       setRecommendations(recArray);
+      
+      // Guardar en caché
+      await AsyncStorage.setItem('cached_recommendations', JSON.stringify(recArray));
+      await AsyncStorage.setItem('recommendations_cache_timestamp', Date.now().toString());
+      setHasCachedData(true);
     } catch (err) {
       console.warn('Error al cargar recomendaciones:', err);
-      Toast.show({ type: 'error', text1: 'Error cargando recomendaciones' });
+      if (!hasCachedData) {
+        Toast.show({ type: 'error', text1: 'Error cargando recomendaciones' });
+      }
     } finally {
       setLoading(false);
       setIsRefreshing(false);
@@ -101,6 +151,98 @@ export default function RecommendationsScreen() {
       setRatings(ratingsData);
     } catch (e) {
       console.error('Error cargando ratings', e);
+    }
+  };
+
+  const fetchUserLists = async () => {
+    try {
+      const token = await AsyncStorage.getItem('token');
+      if (!token) return;
+
+      // Cargar items vistos
+      const seenRes = await axios.get(`${ENV.API_URL}/seen?take=1000`, {
+        headers: { Authorization: `Bearer ${token}` },
+      });
+      
+      let seenData = [];
+      if (Array.isArray(seenRes.data)) {
+        seenData = seenRes.data;
+      } else if (seenRes.data.items && Array.isArray(seenRes.data.items)) {
+        seenData = seenRes.data.items;
+      } else if (seenRes.data.data && Array.isArray(seenRes.data.data)) {
+        seenData = seenRes.data.data;
+      }
+      
+      setSeenItems(new Set(seenData.map((item: any) => item.tmdbId)));
+
+      // Cargar favoritos
+      const favRes = await axios.get(`${ENV.API_URL}/favorites?take=1000`, {
+        headers: { Authorization: `Bearer ${token}` },
+      });
+      
+      let favData = [];
+      if (Array.isArray(favRes.data)) {
+        favData = favRes.data;
+      } else if (favRes.data.favorites?.items && Array.isArray(favRes.data.favorites.items)) {
+        favData = favRes.data.favorites.items;
+      } else if (favRes.data.favorites && Array.isArray(favRes.data.favorites)) {
+        favData = favRes.data.favorites;
+      } else if (favRes.data.items && Array.isArray(favRes.data.items)) {
+        favData = favRes.data.items;
+      } else if (favRes.data.data && Array.isArray(favRes.data.data)) {
+        favData = favRes.data.data;
+      }
+      
+      setFavoriteItems(new Set(favData.map((item: any) => item.tmdbId)));
+
+      // Cargar wishlist
+      const wishRes = await axios.get(`${ENV.API_URL}/wishlist?take=1000`, {
+        headers: { Authorization: `Bearer ${token}` },
+      });
+      
+      let wishData = [];
+      if (Array.isArray(wishRes.data)) {
+        wishData = wishRes.data;
+      } else if (wishRes.data.wishlist?.items && Array.isArray(wishRes.data.wishlist.items)) {
+        wishData = wishRes.data.wishlist.items;
+      } else if (wishRes.data.wishlist && Array.isArray(wishRes.data.wishlist)) {
+        wishData = wishRes.data.wishlist;
+      } else if (wishRes.data.items && Array.isArray(wishRes.data.items)) {
+        wishData = wishRes.data.items;
+      } else if (wishRes.data.data && Array.isArray(wishRes.data.data)) {
+        wishData = wishRes.data.data;
+      }
+      
+      setWishlistItems(new Set(wishData.map((item: any) => item.tmdbId)));
+
+      // Cargar items descartados/no me gusta (endpoint puede no existir aún)
+      try {
+        const dislikedRes = await axios.get(`${ENV.API_URL}/disliked?take=1000`, {
+          headers: { Authorization: `Bearer ${token}` },
+        });
+        
+        let dislikedData = [];
+        if (Array.isArray(dislikedRes.data)) {
+          dislikedData = dislikedRes.data;
+        } else if (dislikedRes.data.disliked?.items && Array.isArray(dislikedRes.data.disliked.items)) {
+          dislikedData = dislikedRes.data.disliked.items;
+        } else if (dislikedRes.data.disliked && Array.isArray(dislikedRes.data.disliked)) {
+          dislikedData = dislikedRes.data.disliked;
+        } else if (dislikedRes.data.items && Array.isArray(dislikedRes.data.items)) {
+          dislikedData = dislikedRes.data.items;
+        } else if (dislikedRes.data.data && Array.isArray(dislikedRes.data.data)) {
+          dislikedData = dislikedRes.data.data;
+        }
+        
+        setDislikedItems(new Set(dislikedData.map((item: any) => item.tmdbId)));
+      } catch (dislikedError: any) {
+        // Si el endpoint no existe (404), simplemente ignorar
+        if (dislikedError.response?.status !== 404) {
+          console.error('Error cargando items descartados:', dislikedError);
+        }
+      }
+    } catch (e) {
+      console.error('Error cargando listas de usuario', e);
     }
   };
 
@@ -169,57 +311,174 @@ export default function RecommendationsScreen() {
   const handleMarkSeen = async () => {
     if (!selectedItem) return;
     
+    // Verificar si ya está marcado
+    if (seenItems.has(selectedItem.tmdbId)) {
+      Toast.show({ type: 'info', text1: 'Ya está marcado como visto' });
+      setSelectedItem(null);
+      return;
+    }
+    
     try {
       const token = await AsyncStorage.getItem('token');
+      const payload = { 
+        tmdbId: selectedItem.tmdbId, 
+        mediaType: selectedItem.mediaType,
+      };
+      
       await axios.post(
         `${ENV.API_URL}/seen`,
-        { tmdbId: selectedItem.tmdbId, mediaType: selectedItem.mediaType },
+        payload,
         { headers: { Authorization: `Bearer ${token}` } }
       );
 
+      // Actualizar el estado local
+      setSeenItems(prev => new Set(prev).add(selectedItem.tmdbId));
+
       Toast.show({ type: 'success', text1: '✅ Marcado como visto', text2: selectedItem.title });
       setSelectedItem(null);
-    } catch (error) {
-      console.warn('Error al marcar como visto:', error);
-      Toast.show({ type: 'error', text1: 'Error', text2: 'No se pudo marcar como visto' });
+    } catch (error: any) {
+      if (error.response?.status === 500 || error.response?.status === 409) {
+        setSeenItems(prev => new Set(prev).add(selectedItem.tmdbId));
+        Toast.show({ type: 'info', text1: 'Ya estaba marcado como visto' });
+        fetchUserLists();
+      } else {
+        Toast.show({ 
+          type: 'error', 
+          text1: 'Error', 
+          text2: error.response?.data?.message || 'No se pudo marcar como visto' 
+        });
+      }
     }
   };
 
   const handleMarkFavorite = async () => {
     if (!selectedItem) return;
 
+    // Verificar si ya está marcado
+    if (favoriteItems.has(selectedItem.tmdbId)) {
+      Toast.show({ type: 'info', text1: 'Ya está en favoritos' });
+      setSelectedItem(null);
+      return;
+    }
+
     try {
       const token = await AsyncStorage.getItem('token');
+      const payload = { 
+        tmdbId: selectedItem.tmdbId, 
+        mediaType: selectedItem.mediaType,
+        title: selectedItem.title,
+      };
+      
       await axios.post(
         `${ENV.API_URL}/favorites`,
-        { tmdbId: selectedItem.tmdbId, mediaType: selectedItem.mediaType },
+        payload,
         { headers: { Authorization: `Bearer ${token}` } }
       );
 
+      // Actualizar el estado local
+      setFavoriteItems(prev => new Set(prev).add(selectedItem.tmdbId));
+
       Toast.show({ type: 'success', text1: '❤️ Agregado a favoritos', text2: selectedItem.title });
       setSelectedItem(null);
-    } catch (error) {
-      console.warn('Error al marcar favorito:', error);
-      Toast.show({ type: 'error', text1: 'Error', text2: 'No se pudo agregar a favoritos' });
+    } catch (error: any) {
+      if (error.response?.status === 500 || error.response?.status === 409) {
+        setFavoriteItems(prev => new Set(prev).add(selectedItem.tmdbId));
+        Toast.show({ type: 'info', text1: 'Ya estaba en favoritos' });
+        fetchUserLists();
+      } else {
+        Toast.show({ 
+          type: 'error', 
+          text1: 'Error', 
+          text2: error.response?.data?.message || 'No se pudo agregar a favoritos' 
+        });
+      }
     }
   };
 
   const handleMarkWishlist = async () => {
     if (!selectedItem) return;
 
+    // Verificar si ya está marcado
+    if (wishlistItems.has(selectedItem.tmdbId)) {
+      Toast.show({ type: 'info', text1: 'Ya está en wishlist' });
+      setSelectedItem(null);
+      return;
+    }
+
     try {
       const token = await AsyncStorage.getItem('token');
+      const payload = { 
+        tmdbId: selectedItem.tmdbId, 
+        mediaType: selectedItem.mediaType,
+      };
+      
       await axios.post(
         `${ENV.API_URL}/wishlist`,
-        { tmdbId: selectedItem.tmdbId, mediaType: selectedItem.mediaType },
+        payload,
         { headers: { Authorization: `Bearer ${token}` } }
       );
 
+      // Actualizar el estado local
+      setWishlistItems(prev => new Set(prev).add(selectedItem.tmdbId));
+
       Toast.show({ type: 'success', text1: '💖 Agregado a wishlist', text2: selectedItem.title });
       setSelectedItem(null);
-    } catch (error) {
-      console.warn('Error al marcar wishlist:', error);
-      Toast.show({ type: 'error', text1: 'Error', text2: 'No se pudo agregar a wishlist' });
+    } catch (error: any) {
+      if (error.response?.status === 500 || error.response?.status === 409) {
+        setWishlistItems(prev => new Set(prev).add(selectedItem.tmdbId));
+        Toast.show({ type: 'info', text1: 'Ya estaba en wishlist' });
+        fetchUserLists();
+      } else {
+        Toast.show({ 
+          type: 'error', 
+          text1: 'Error', 
+          text2: error.response?.data?.message || 'No se pudo agregar a wishlist' 
+        });
+      }
+    }
+  };
+
+  const handleMarkDisliked = async () => {
+    if (!selectedItem) return;
+
+    if (dislikedItems.has(selectedItem.tmdbId)) {
+      Toast.show({ type: 'info', text1: 'Ya está descartado' });
+      setSelectedItem(null);
+      return;
+    }
+
+    try {
+      const token = await AsyncStorage.getItem('token');
+      const payload = { 
+        tmdbId: selectedItem.tmdbId, 
+        mediaType: selectedItem.mediaType,
+      };
+      
+      await axios.post(
+        `${ENV.API_URL}/disliked`,
+        payload,
+        { headers: { Authorization: `Bearer ${token}` } }
+      );
+
+      setDislikedItems(prev => new Set(prev).add(selectedItem.tmdbId));
+      setRecommendations(prev => prev.filter(item => item.tmdbId !== selectedItem.tmdbId));
+      
+      Toast.show({ type: 'success', text1: '🚫 No se volverá a recomendar', text2: selectedItem.title });
+      setSelectedItem(null);
+    } catch (error: any) {
+      if (error.response?.status === 500 || error.response?.status === 409) {
+        setDislikedItems(prev => new Set(prev).add(selectedItem.tmdbId));
+        setRecommendations(prev => prev.filter(item => item.tmdbId !== selectedItem.tmdbId));
+        Toast.show({ type: 'info', text1: 'Ya estaba descartado' });
+        fetchUserLists();
+        setSelectedItem(null);
+      } else {
+        Toast.show({ 
+          type: 'error', 
+          text1: 'Error', 
+          text2: error.response?.data?.message || 'No se pudo descartar' 
+        });
+      }
     }
   };
 
@@ -227,6 +486,8 @@ export default function RecommendationsScreen() {
     if (isGenerating) return;
 
     setIsGenerating(true);
+    setLoading(false); // Asegurar que loading esté en false
+    
     try {
       const token = await AsyncStorage.getItem('token');
       const body: any = {};
@@ -242,6 +503,10 @@ export default function RecommendationsScreen() {
 
       setRecommendations(newItems);
       setPromptText('');
+
+      // Actualizar caché con las nuevas recomendaciones
+      await AsyncStorage.setItem('cached_recommendations', JSON.stringify(newItems));
+      await AsyncStorage.setItem('recommendations_cache_timestamp', Date.now().toString());
 
       Toast.show({ type: 'success', text1: '🎯 Nuevas recomendaciones generadas' });
     } catch (error) {
@@ -294,10 +559,10 @@ export default function RecommendationsScreen() {
 
           <TouchableOpacity
             style={styles.updateButton}
-            onPress={fetchRecommendations}
+            onPress={handleGenerateRecommendations}
             disabled={isGenerating || isRefreshing}
           >
-            {isRefreshing ? (
+            {isGenerating || isRefreshing ? (
               <ActivityIndicator size="small" color={theme.colors.text} />
             ) : (
               <Text style={styles.updateButtonText}>Actualizar</Text>
@@ -467,11 +732,21 @@ export default function RecommendationsScreen() {
                 )}
 
                 <TouchableOpacity
-                  style={styles.modalButton}
+                  style={[
+                    styles.modalButton,
+                    selectedItem && seenItems.has(selectedItem.tmdbId) && styles.modalButtonMarked
+                  ]}
                   onPress={handleMarkSeen}
+                  disabled={selectedItem ? seenItems.has(selectedItem.tmdbId) : false}
                 >
-                  <Ionicons name="eye" size={20} color="#22c55e" />
-                  <Text style={styles.modalButtonText}>Marcar visto</Text>
+                  <Ionicons 
+                    name={selectedItem && seenItems.has(selectedItem.tmdbId) ? "eye" : "eye-outline"} 
+                    size={20} 
+                    color="#22c55e" 
+                  />
+                  <Text style={styles.modalButtonText}>
+                    {selectedItem && seenItems.has(selectedItem.tmdbId) ? "✓ Visto" : "Marcar visto"}
+                  </Text>
                 </TouchableOpacity>
 
                 <TouchableOpacity
@@ -494,7 +769,6 @@ export default function RecommendationsScreen() {
                                 starSize={16}
                                 color="#F59E0B"
                                 starStyle={{ marginHorizontal: 1 }}
-                                enableHalfStar={false}
                               />
                             </View>
                           </>
@@ -506,19 +780,58 @@ export default function RecommendationsScreen() {
                 </TouchableOpacity>
 
                 <TouchableOpacity
-                  style={styles.modalButton}
+                  style={[
+                    styles.modalButton,
+                    selectedItem && favoriteItems.has(selectedItem.tmdbId) && styles.modalButtonMarked
+                  ]}
                   onPress={handleMarkFavorite}
+                  disabled={selectedItem ? favoriteItems.has(selectedItem.tmdbId) : false}
                 >
-                  <Ionicons name="heart" size={20} color="#ec4899" />
-                  <Text style={styles.modalButtonText}>En favoritos</Text>
+                  <Ionicons 
+                    name={selectedItem && favoriteItems.has(selectedItem.tmdbId) ? "heart" : "heart-outline"} 
+                    size={20} 
+                    color="#ec4899" 
+                  />
+                  <Text style={styles.modalButtonText}>
+                    {selectedItem && favoriteItems.has(selectedItem.tmdbId) ? "✓ En favoritos" : "Agregar a favoritos"}
+                  </Text>
                 </TouchableOpacity>
 
                 <TouchableOpacity
-                  style={styles.modalButton}
+                  style={[
+                    styles.modalButton,
+                    selectedItem && wishlistItems.has(selectedItem.tmdbId) && styles.modalButtonMarked
+                  ]}
                   onPress={handleMarkWishlist}
+                  disabled={selectedItem ? wishlistItems.has(selectedItem.tmdbId) : false}
                 >
-                  <Ionicons name="bookmark" size={20} color={theme.colors.primary} />
-                  <Text style={styles.modalButtonText}>Añadir a wishlist</Text>
+                  <Ionicons 
+                    name={selectedItem && wishlistItems.has(selectedItem.tmdbId) ? "bookmark" : "bookmark-outline"} 
+                    size={20} 
+                    color={theme.colors.primary} 
+                  />
+                  <Text style={styles.modalButtonText}>
+                    {selectedItem && wishlistItems.has(selectedItem.tmdbId) ? "✓ En wishlist" : "Añadir a wishlist"}
+                  </Text>
+                </TouchableOpacity>
+
+                <TouchableOpacity
+                  style={[
+                    styles.modalButton,
+                    styles.modalButtonDislike,
+                    selectedItem && dislikedItems.has(selectedItem.tmdbId) && styles.modalButtonMarked
+                  ]}
+                  onPress={handleMarkDisliked}
+                  disabled={selectedItem ? dislikedItems.has(selectedItem.tmdbId) : false}
+                >
+                  <Ionicons 
+                    name={selectedItem && dislikedItems.has(selectedItem.tmdbId) ? "close-circle" : "close-circle-outline"} 
+                    size={20} 
+                    color="#ef4444" 
+                  />
+                  <Text style={styles.modalButtonText}>
+                    {selectedItem && dislikedItems.has(selectedItem.tmdbId) ? "✓ Descartado" : "No me interesa"}
+                  </Text>
                 </TouchableOpacity>
               </View>
 
@@ -933,6 +1246,16 @@ const styles = StyleSheet.create({
     paddingHorizontal: theme.spacing.lg,
     borderRadius: theme.borderRadius.md,
     gap: theme.spacing.sm,
+  },
+  modalButtonMarked: {
+    backgroundColor: 'rgba(139, 92, 246, 0.15)',
+    borderWidth: 1,
+    borderColor: 'rgba(139, 92, 246, 0.3)',
+    opacity: 0.7,
+  },
+  modalButtonDislike: {
+    borderWidth: 1,
+    borderColor: 'rgba(239, 68, 68, 0.3)',
   },
   ratingPreview: {
     marginTop: 4,

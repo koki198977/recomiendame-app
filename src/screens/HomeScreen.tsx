@@ -198,12 +198,12 @@ export default function HomeScreen() {
         }
         showsVerticalScrollIndicator={false}
       >
-        {/* Header mejorado con logo y nombre */}
+        {/* Header con logo y nombre de usuario */}
         <View style={styles.headerContainer}>
-          <Image
-            source={require('../../assets/logo.png')}
-            style={styles.logo}
-            resizeMode="contain"
+          <Image 
+            source={require('../../assets/logo.png')} 
+            style={styles.logoImage} 
+            resizeMode="contain" 
           />
           <View style={styles.headerTextContainer}>
             <Text style={styles.greeting}>Hola, {userName}</Text>
@@ -501,15 +501,15 @@ const styles = StyleSheet.create({
   headerContainer: {
     flexDirection: 'row',
     alignItems: 'center',
+    gap: theme.spacing.md,
     paddingHorizontal: theme.spacing.lg,
     paddingTop: theme.spacing.xl,
     paddingBottom: theme.spacing.lg,
     backgroundColor: theme.colors.background,
   },
-  logo: {
-    width: 50,
-    height: 50,
-    marginRight: theme.spacing.md,
+  logoImage: {
+    width: 48,
+    height: 48,
   },
   headerTextContainer: {
     flex: 1,

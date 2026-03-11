@@ -1,6 +1,6 @@
 // App.tsx
 import React, { useEffect, useState } from 'react';
-import { View, ActivityIndicator, Image, Text } from 'react-native';
+import { View, ActivityIndicator, Image, Text, TouchableOpacity } from 'react-native';
 import AsyncStorage from '@react-native-async-storage/async-storage';
 import axios from 'axios';
 import Toast from 'react-native-toast-message';
@@ -54,9 +54,7 @@ function MainTabs() {
   return (
     <Tab.Navigator
       screenOptions={({ route }) => ({
-        headerTitle: () => <LogoTitle />,
-        headerStyle: { backgroundColor: '#0f0f0f' },
-        headerShadowVisible: false,
+        headerShown: false, // Sin header en ninguna pantalla
         tabBarStyle: { backgroundColor: '#0f0f0f', borderTopColor: '#222' },
         tabBarActiveTintColor: '#a855f7',
         tabBarInactiveTintColor: '#888',
@@ -75,12 +73,36 @@ function MainTabs() {
         },
       })}
     >
-      <Tab.Screen name="Home" component={HomeScreen} />
-      <Tab.Screen name="Recommendations" component={RecommendationsScreen} />
-      <Tab.Screen name="Seen" component={SeenScreen} />
-      <Tab.Screen name="Favorites" component={FavoritesScreen} />
-      <Tab.Screen name="Wishlist" component={WishListScreen} />
-      <Tab.Screen name="Profile" component={ProfileScreen} />
+      <Tab.Screen 
+        name="Home" 
+        component={HomeScreen}
+        options={{ tabBarLabel: 'Inicio' }}
+      />
+      <Tab.Screen 
+        name="Recommendations" 
+        component={RecommendationsScreen}
+        options={{ tabBarLabel: 'Recomienda' }}
+      />
+      <Tab.Screen 
+        name="Seen" 
+        component={SeenScreen}
+        options={{ tabBarLabel: 'Vistos' }}
+      />
+      <Tab.Screen 
+        name="Favorites" 
+        component={FavoritesScreen}
+        options={{ tabBarLabel: 'Favoritos' }}
+      />
+      <Tab.Screen 
+        name="Wishlist" 
+        component={WishListScreen}
+        options={{ tabBarLabel: 'Deseados' }}
+      />
+      <Tab.Screen 
+        name="Profile" 
+        component={ProfileScreen}
+        options={{ tabBarLabel: 'Perfil' }}
+      />
     </Tab.Navigator>
   );
 }

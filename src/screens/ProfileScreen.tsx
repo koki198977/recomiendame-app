@@ -7,6 +7,7 @@ import {
   Modal,
   Button,
   StyleSheet,
+  TouchableOpacity,
 } from 'react-native';
 import { 
   Text, 
@@ -19,6 +20,7 @@ import {
   Portal,
   Dialog
 } from 'react-native-paper';
+import { Ionicons } from '@expo/vector-icons';
 import AsyncStorage from '@react-native-async-storage/async-storage';
 import axios from 'axios';
 import Toast from 'react-native-toast-message';
@@ -200,122 +202,234 @@ export default function ProfileScreen({ navigation }: any) {
   }
 
   return (
-    <ScrollView style={{ flex: 1, backgroundColor: '#000', paddingHorizontal: 24, paddingTop: 40 }}>
-      {/* Avatar y email */}
-      <View style={{ alignItems: 'center', marginBottom: 24 }}>
-        <Avatar.Text 
-          size={112} 
-          label="👤" 
-          style={{ backgroundColor: '#a855f7' }}
-        />
-        <Text variant="titleMedium" style={{ color: '#fff', marginTop: 16 }}>
-          {user?.email || 'Usuario'}
-        </Text>
-      </View>
+    <View style={{ flex: 1, backgroundColor: '#000' }}>
+      {/* Botón de salir arriba a la derecha */}
+      <TouchableOpacity 
+        onPress={handleLogout}
+        style={{ 
+          position: 'absolute', 
+          top: 50, 
+          right: 24, 
+          zIndex: 10,
+          backgroundColor: 'rgba(239, 68, 68, 0.15)',
+          borderRadius: 12,
+          padding: 12,
+          borderWidth: 1,
+          borderColor: 'rgba(239, 68, 68, 0.3)',
+        }}
+      >
+        <Ionicons name="log-out-outline" size={22} color="#ef4444" />
+      </TouchableOpacity>
 
-      <Card style={{ backgroundColor: '#1f1f1f', marginBottom: 16 }}>
-        <Card.Content style={{ padding: 20 }}>
-          <Text variant="titleMedium" style={{ color: '#fff', marginBottom: 16 }}>
+      <ScrollView 
+        style={{ flex: 1 }} 
+        contentContainerStyle={{ paddingBottom: 100 }}
+        showsVerticalScrollIndicator={false}
+      >
+        {/* Header con avatar y email */}
+        <View style={{ 
+          alignItems: 'center', 
+          paddingTop: 60,
+          paddingBottom: 32,
+          paddingHorizontal: 24,
+        }}>
+          <View style={{
+            position: 'relative',
+            marginBottom: 20,
+          }}>
+            {/* Glow effect */}
+            <View style={{
+              position: 'absolute',
+              width: 140,
+              height: 140,
+              borderRadius: 70,
+              backgroundColor: '#a855f7',
+              opacity: 0.2,
+              top: -10,
+              left: -10,
+            }} />
+            <Avatar.Text 
+              size={120} 
+              label={user?.name?.charAt(0).toUpperCase() || user?.email?.charAt(0).toUpperCase() || '👤'} 
+              style={{ 
+                backgroundColor: '#a855f7',
+                elevation: 8,
+                shadowColor: '#a855f7',
+                shadowOffset: { width: 0, height: 4 },
+                shadowOpacity: 0.3,
+                shadowRadius: 8,
+              }}
+              labelStyle={{ fontSize: 48, fontWeight: 'bold' }}
+            />
+          </View>
+          <Text style={{ 
+            color: '#fff', 
+            fontSize: 18,
+            fontWeight: '600',
+            marginBottom: 4,
+          }}>
+            {user?.name || 'Usuario'}
+          </Text>
+          <Text style={{ 
+            color: '#9ca3af', 
+            fontSize: 14,
+          }}>
+            {user?.email || ''}
+          </Text>
+        </View>
+
+        {/* Información Personal */}
+        <View style={{ paddingHorizontal: 24, marginBottom: 24 }}>
+          <Text style={{ 
+            color: '#fff', 
+            fontSize: 20, 
+            fontWeight: 'bold',
+            marginBottom: 16,
+          }}>
             Información Personal
           </Text>
 
-          {/* Nombre */}
-          <TextInput
-            label="Nombre completo"
-            value={fullName}
-            onChangeText={setFullName}
-            mode="outlined"
-            style={{ marginBottom: 16 }}
-            theme={{ 
-              colors: { 
-                onSurfaceVariant: '#aaa',
-                outline: '#444'
-              } 
-            }}
-          />
+          {/* Nombre completo */}
+          <View style={{ marginBottom: 16 }}>
+            <Text style={{ color: '#9ca3af', fontSize: 12, marginBottom: 8, fontWeight: '600' }}>
+              NOMBRE COMPLETO
+            </Text>
+            <TextInput
+              value={fullName}
+              onChangeText={setFullName}
+              placeholder="Tu nombre completo"
+              placeholderTextColor="#4b5563"
+              style={{
+                backgroundColor: '#1a1a1a',
+                borderRadius: 12,
+                paddingHorizontal: 16,
+                paddingVertical: 14,
+                color: '#fff',
+                fontSize: 16,
+                borderWidth: 1,
+                borderColor: '#27272a',
+              }}
+            />
+          </View>
 
           {/* Fecha de nacimiento */}
-          <PaperButton
-            mode="outlined"
-            onPress={() => {
-              setTempDate(birthDate ? parseLocalDate(birthDate) : new Date());
-              setShowDatePicker(true);
-            }}
-            style={{ marginBottom: 16 }}
-            theme={{ 
-              colors: { 
-                outline: '#444'
-              } 
-            }}
-          >
-            {birthDate || 'Selecciona fecha de nacimiento'}
-          </PaperButton>
+          <View style={{ marginBottom: 16 }}>
+            <Text style={{ color: '#9ca3af', fontSize: 12, marginBottom: 8, fontWeight: '600' }}>
+              FECHA DE NACIMIENTO
+            </Text>
+            <TouchableOpacity
+              onPress={() => setShowDatePicker(true)}
+              style={{
+                backgroundColor: '#1a1a1a',
+                borderRadius: 12,
+                paddingHorizontal: 16,
+                paddingVertical: 14,
+                borderWidth: 1,
+                borderColor: '#27272a',
+                flexDirection: 'row',
+                alignItems: 'center',
+                justifyContent: 'space-between',
+              }}
+            >
+              <Text style={{ color: birthDate ? '#fff' : '#4b5563', fontSize: 16 }}>
+                {birthDate || 'Selecciona tu fecha de nacimiento'}
+              </Text>
+              <Ionicons name="calendar-outline" size={20} color="#a855f7" />
+            </TouchableOpacity>
+          </View>
 
           {/* País */}
-          <CustomPicker
-            label="País"
-            value={country}
-            onChange={setCountry}
-            options={countryOptions}
-          />
+          <View style={{ marginBottom: 16 }}>
+            <Text style={{ color: '#9ca3af', fontSize: 12, marginBottom: 8, fontWeight: '600' }}>
+              PAÍS
+            </Text>
+            <CustomPicker
+              label=""
+              value={country}
+              onChange={setCountry}
+              options={countryOptions}
+            />
+          </View>
 
           {/* Idioma */}
-          <CustomPicker
-            label="Idioma"
-            value={language}
-            onChange={setLanguage}
-            options={languageOptions}
-          />
-        </Card.Content>
-      </Card>
+          <View style={{ marginBottom: 16 }}>
+            <Text style={{ color: '#9ca3af', fontSize: 12, marginBottom: 8, fontWeight: '600' }}>
+              IDIOMA
+            </Text>
+            <CustomPicker
+              label=""
+              value={language}
+              onChange={setLanguage}
+              options={languageOptions}
+            />
+          </View>
+        </View>
 
-      <Card style={{ backgroundColor: '#1f1f1f', marginBottom: 24 }}>
-        <Card.Content style={{ padding: 20 }}>
-          <Text variant="titleMedium" style={{ color: '#fff', marginBottom: 16 }}>
-            Géneros favoritos
+        {/* Géneros favoritos */}
+        <View style={{ paddingHorizontal: 24, marginBottom: 32 }}>
+          <Text style={{ 
+            color: '#fff', 
+            fontSize: 20, 
+            fontWeight: 'bold',
+            marginBottom: 16,
+          }}>
+            Géneros Favoritos
           </Text>
-          <View style={{ flexDirection: 'row', flexWrap: 'wrap', gap: 8 }}>
+          <View style={{ 
+            flexDirection: 'row', 
+            flexWrap: 'wrap', 
+            gap: 10,
+          }}>
             {genres.map((genre) => (
-              <Chip
+              <TouchableOpacity
                 key={genre}
-                selected={favoriteGenres.includes(genre)}
                 onPress={() => toggleGenre(genre)}
-                mode="outlined"
-                style={{ 
-                  backgroundColor: favoriteGenres.includes(genre) ? '#a855f7' : 'transparent',
-                  borderColor: favoriteGenres.includes(genre) ? '#a855f7' : '#444'
-                }}
-                textStyle={{ 
-                  color: favoriteGenres.includes(genre) ? '#fff' : '#fff' 
+                style={{
+                  paddingHorizontal: 16,
+                  paddingVertical: 10,
+                  borderRadius: 20,
+                  backgroundColor: favoriteGenres.includes(genre) ? '#a855f7' : '#1a1a1a',
+                  borderWidth: 1,
+                  borderColor: favoriteGenres.includes(genre) ? '#a855f7' : '#27272a',
                 }}
               >
-                {genre}
-              </Chip>
+                <Text style={{ 
+                  color: favoriteGenres.includes(genre) ? '#fff' : '#9ca3af',
+                  fontSize: 14,
+                  fontWeight: favoriteGenres.includes(genre) ? '600' : '400',
+                }}>
+                  {genre}
+                </Text>
+              </TouchableOpacity>
             ))}
           </View>
-        </Card.Content>
-      </Card>
+        </View>
 
-      {/* Guardar y Cerrar sesión */}
-      <PaperButton
-        mode="contained"
-        onPress={handleSave}
-        style={{ marginBottom: 16 }}
-        contentStyle={{ paddingVertical: 8 }}
-        icon="content-save"
-      >
-        Guardar cambios
-      </PaperButton>
-
-      <PaperButton
-        mode="contained"
-        onPress={handleLogout}
-        style={{ backgroundColor: '#dc2626' }}
-        contentStyle={{ paddingVertical: 8 }}
-        icon="logout"
-      >
-        Cerrar sesión
-      </PaperButton>
+        {/* Botón guardar */}
+        <View style={{ paddingHorizontal: 24 }}>
+          <TouchableOpacity
+            onPress={handleSave}
+            style={{
+              backgroundColor: '#a855f7',
+              borderRadius: 12,
+              paddingVertical: 16,
+              alignItems: 'center',
+              shadowColor: '#a855f7',
+              shadowOffset: { width: 0, height: 4 },
+              shadowOpacity: 0.3,
+              shadowRadius: 8,
+              elevation: 8,
+            }}
+          >
+            <Text style={{ 
+              color: '#fff', 
+              fontSize: 16, 
+              fontWeight: 'bold',
+            }}>
+              Guardar Cambios
+            </Text>
+          </TouchableOpacity>
+        </View>
 
       {/* Modal para fecha de nacimiento */}
       <Portal>
@@ -357,5 +471,6 @@ export default function ProfileScreen({ navigation }: any) {
         </Dialog>
       </Portal>
     </ScrollView>
+    </View>
   );
 }
