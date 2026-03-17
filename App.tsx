@@ -16,6 +16,7 @@ import SeenScreen from './src/screens/SeenScreen';
 import ProfileScreen from './src/screens/ProfileScreen';
 import RecommendationsScreen from './src/screens/RecommendationsScreen';
 import WishListScreen from './src/screens/WishListScreen';
+import GuestScreen from './src/screens/GuestScreen';
 
 import { API_URL } from '@env';
 
@@ -33,7 +34,7 @@ const customTheme = {
   },
 };
 
-type Screen = 'loading' | 'login' | 'register' | 'forgotPassword' | 'home';
+type Screen = 'loading' | 'login' | 'register' | 'forgotPassword' | 'home' | 'guest';
 type Tab = 'home' | 'recommendations' | 'seen' | 'favorites' | 'wishlist' | 'profile';
 
 const MainApp: React.FC<{ onLogout: () => void; onNavigate: (screen: Screen) => void }> = ({ onLogout, onNavigate }) => {
@@ -279,7 +280,8 @@ export default function App() {
               setCurrentScreen(screenMap[screen] || screen as Screen);
             },
             replace: (screen: string) => setCurrentScreen(screen === 'MainTabs' ? 'home' : screen as Screen)
-          }} 
+          }}
+          onContinueAsGuest={() => setCurrentScreen('guest')}
         />
       </PaperProvider>
     );
@@ -326,7 +328,11 @@ export default function App() {
   return (
     <SafeAreaProvider>
       <PaperProvider theme={customTheme}>
-        <MainApp onLogout={handleLogout} onNavigate={setCurrentScreen} />
+        {currentScreen === 'guest' ? (
+          <GuestScreen onLogin={() => setCurrentScreen('login')} />
+        ) : (
+          <MainApp onLogout={handleLogout} onNavigate={setCurrentScreen} />
+        )}
       </PaperProvider>
     </SafeAreaProvider>
   );

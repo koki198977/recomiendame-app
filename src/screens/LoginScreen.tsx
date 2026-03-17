@@ -19,7 +19,7 @@ import { Ionicons } from '@expo/vector-icons';
 import { theme } from '../styles/theme';
 import { ModernButton } from '../components/ModernButton';
 
-export default function LoginScreen({ navigation }: any) {
+export default function LoginScreen({ navigation, onContinueAsGuest }: any) {
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
   const [loading, setLoading] = useState(false);
@@ -141,6 +141,15 @@ export default function LoginScreen({ navigation }: any) {
           >
             <Text style={styles.registerText}>¿Aún no tienes cuenta? Regístrate</Text>
           </TouchableOpacity>
+
+          {onContinueAsGuest && (
+            <TouchableOpacity 
+              style={styles.guestButton}
+              onPress={onContinueAsGuest}
+            >
+              <Text style={styles.guestText}>Continuar sin cuenta</Text>
+            </TouchableOpacity>
+          )}
         </View>
       </ScrollView>
       <Toast />
@@ -240,5 +249,17 @@ const styles = StyleSheet.create({
     fontSize: theme.fontSize.sm,
     color: theme.colors.primary,
     fontWeight: '500',
+  },
+  guestButton: {
+    marginTop: theme.spacing.lg,
+    alignItems: 'center',
+    paddingVertical: theme.spacing.sm,
+    borderTopWidth: 1,
+    borderTopColor: 'rgba(139, 92, 246, 0.1)',
+  },
+  guestText: {
+    fontSize: theme.fontSize.sm,
+    color: theme.colors.textSecondary,
+    fontWeight: '400',
   },
 });

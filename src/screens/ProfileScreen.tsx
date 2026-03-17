@@ -8,6 +8,8 @@ import {
   Button,
   StyleSheet,
   TouchableOpacity,
+  Linking,
+  Alert,
 } from 'react-native';
 import { 
   Text, 
@@ -186,6 +188,21 @@ export default function ProfileScreen({ navigation }: any) {
         text2: 'No se pudo guardar',
       });
     }
+  };
+
+  const handleDeleteAccount = () => {
+    Alert.alert(
+      'Eliminar cuenta',
+      'Serás redirigido a nuestra página web para completar el proceso de eliminación de cuenta.',
+      [
+        { text: 'Cancelar', style: 'cancel' },
+        {
+          text: 'Continuar',
+          style: 'destructive',
+          onPress: () => Linking.openURL('https://recomiendameapp.cl/request-delete-account/'),
+        },
+      ]
+    );
   };
 
   const handleLogout = async () => {
@@ -427,6 +444,24 @@ export default function ProfileScreen({ navigation }: any) {
               fontWeight: 'bold',
             }}>
               Guardar Cambios
+            </Text>
+          </TouchableOpacity>
+
+          {/* Eliminar cuenta */}
+          <TouchableOpacity
+            onPress={handleDeleteAccount}
+            style={{
+              marginTop: 16,
+              paddingVertical: 14,
+              alignItems: 'center',
+              borderRadius: 12,
+              borderWidth: 1,
+              borderColor: 'rgba(239, 68, 68, 0.3)',
+              backgroundColor: 'rgba(239, 68, 68, 0.08)',
+            }}
+          >
+            <Text style={{ color: '#ef4444', fontSize: 14, fontWeight: '500' }}>
+              Eliminar cuenta
             </Text>
           </TouchableOpacity>
         </View>

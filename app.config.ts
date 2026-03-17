@@ -4,7 +4,7 @@ import { ExpoConfig } from '@expo/config';
 const config: ExpoConfig = {
   name: 'Recomiéndame',
   slug: 'recomiendame-app',
-  version: '1.0.1',
+  version: '1.0.2',
   orientation: 'portrait',
   icon: './assets/icon.png',
   userInterfaceStyle: 'dark',
@@ -22,7 +22,7 @@ const config: ExpoConfig = {
   },
   android: {
     package: 'com.kokialvarez.recomiendame',
-    versionCode: 2,
+    versionCode: 3,
     adaptiveIcon: {
       foregroundImage: './assets/adaptive-icon.png',
       backgroundColor: '#000000',
