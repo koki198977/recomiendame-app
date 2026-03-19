@@ -1,11 +1,10 @@
 import React, { useEffect, useState } from 'react';
-import { View, ActivityIndicator, Text, TouchableOpacity, StyleSheet, Image } from 'react-native';
+import { View, ActivityIndicator, Text, TouchableOpacity, StyleSheet, Linking } from 'react-native';
 import AsyncStorage from '@react-native-async-storage/async-storage';
 import axios from 'axios';
 import Toast from 'react-native-toast-message';
 import { Provider as PaperProvider, MD3DarkTheme } from 'react-native-paper';
 import { SafeAreaProvider, SafeAreaView } from 'react-native-safe-area-context';
-import { Ionicons } from '@expo/vector-icons';
 
 import LoginScreen from './src/screens/LoginScreen';
 import RegisterScreen from './src/screens/RegisterScreen';
@@ -17,6 +16,7 @@ import ProfileScreen from './src/screens/ProfileScreen';
 import RecommendationsScreen from './src/screens/RecommendationsScreen';
 import WishListScreen from './src/screens/WishListScreen';
 import GuestScreen from './src/screens/GuestScreen';
+import SharedFavoritesScreen from './src/screens/SharedFavoritesScreen';
 
 import { API_URL } from '@env';
 
@@ -35,6 +35,11 @@ const customTheme = {
 };
 
 type Screen = 'loading' | 'login' | 'register' | 'forgotPassword' | 'home' | 'guest';
+
+type SharedFavoritesParams = {
+  userId: string;
+  ownerName?: string;
+};
 type Tab = 'home' | 'recommendations' | 'seen' | 'favorites' | 'wishlist' | 'profile';
 
 const MainApp: React.FC<{ onLogout: () => void; onNavigate: (screen: Screen) => void }> = ({ onLogout, onNavigate }) => {
@@ -222,6 +227,31 @@ const toastStyles = StyleSheet.create({
 
 export default function App() {
   const [currentScreen, setCurrentScreen] = useState<Screen>('loading');
+  const [sharedParams, setSharedParams] = useState<SharedFavoritesParams | null>(null);
+
+  const handleDeepLink = (url: string) => {
+    // Ignorar URLs internas de Expo Go
+    if (url.startsWith('exp://')) return;
+
+    console.log('[DeepLink] URL recibida:', url);
+    const match =
+      url.match(/recomiendameapp\.cl\/shared-favorites\/([^/?]+)/) ||
+      url.match(/shared-favorites\/([^/?]+)/);
+    if (match) {
+      console.log('[DeepLink] userId extraído:', match[1]);
+      setSharedParams({ userId: match[1] });
+    } else {
+      console.log('[DeepLink] no se pudo extraer userId del URL');
+    }
+  };
+
+  useEffect(() => {
+    // Escuchar deep links mientras la app está abierta
+    const subscription = Linking.addEventListener('url', ({ url }) => handleDeepLink(url));
+    // Verificar si la app fue abierta desde un deep link
+    Linking.getInitialURL().then(url => { if (url) handleDeepLink(url); });
+    return () => subscription.remove();
+  }, []);
 
   useEffect(() => {
     const checkAuth = async () => {
@@ -332,6 +362,21 @@ export default function App() {
           <GuestScreen onLogin={() => setCurrentScreen('login')} />
         ) : (
           <MainApp onLogout={handleLogout} onNavigate={setCurrentScreen} />
+        )}
+
+        {/* Overlay de favoritos compartidos — funciona encima de cualquier pantalla */}
+        {sharedParams && (
+          <View style={StyleSheet.absoluteFill}>
+            <SharedFavoritesScreen
+              userId={sharedParams.userId}
+              ownerName={sharedParams.ownerName}
+              onLogin={() => {
+                setSharedParams(null);
+                setCurrentScreen('login');
+              }}
+              onBack={() => setSharedParams(null)}
+            />
+          </View>
         )}
       </PaperProvider>
     </SafeAreaProvider>

@@ -10,6 +10,7 @@ import {
   Modal,
   ScrollView,
   Dimensions,
+  Share,
 } from 'react-native';
 import { 
   Text, 
@@ -291,9 +292,29 @@ export default function FavoritesScreen() {
     );
   }
 
+  const handleShare = async () => {
+    try {
+      const userId = await AsyncStorage.getItem('userId');
+      if (!userId) return;
+      const link = `https://recomiendameapp.cl/shared-favorites/${userId}`;
+      await Share.share({
+        message: `⭐ Mira mis favoritos en Recomiéndame:\n${link}`,
+        title: 'Mis favoritos',
+      });
+    } catch {
+      Toast.show({ type: 'error', text1: 'No se pudo compartir' });
+    }
+  };
+
   return (
     <View style={styles.container}>
-      <Text style={styles.title}>⭐ Tus Favoritos</Text>
+      <View style={styles.titleRow}>
+        <Text style={styles.title}>⭐ Tus Favoritos</Text>
+        <TouchableOpacity style={styles.shareBtn} onPress={handleShare}>
+          <Ionicons name="share-outline" size={20} color="#a855f7" />
+          <Text style={styles.shareBtnText}>Compartir</Text>
+        </TouchableOpacity>
+      </View>
 
       <Searchbar
         placeholder="Buscar entre tus favoritos"
@@ -748,11 +769,32 @@ const styles = StyleSheet.create({
     alignItems: 'center',
     backgroundColor: theme.colors.background,
   },
+  titleRow: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'space-between',
+    marginBottom: theme.spacing.md,
+  },
   title: {
     fontSize: theme.fontSize.xxl,
     fontWeight: 'bold',
     color: theme.colors.text,
-    marginBottom: theme.spacing.md,
+  },
+  shareBtn: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 6,
+    backgroundColor: 'rgba(168,85,247,0.12)',
+    paddingHorizontal: 14,
+    paddingVertical: 8,
+    borderRadius: 20,
+    borderWidth: 1,
+    borderColor: 'rgba(168,85,247,0.3)',
+  },
+  shareBtnText: {
+    color: '#a855f7',
+    fontSize: 13,
+    fontWeight: '600',
   },
   searchbar: {
     marginBottom: theme.spacing.md,
