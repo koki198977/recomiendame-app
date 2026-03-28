@@ -4,7 +4,7 @@ import { ExpoConfig } from '@expo/config';
 const config: ExpoConfig = {
   name: 'Recomiéndame',
   slug: 'recomiendame-app',
-  version: '1.0.5',
+  version: '1.2.2',
   orientation: 'portrait',
   icon: './assets/icon.png',
   userInterfaceStyle: 'dark',
@@ -17,7 +17,7 @@ const config: ExpoConfig = {
   ios: {
     supportsTablet: true,
     bundleIdentifier: 'com.kokialvarez.recomiendame',
-    buildNumber: '5',
+    buildNumber: '6',
     associatedDomains: ['applinks:recomiendameapp.cl'],
     infoPlist: {
       LSApplicationQueriesSchemes: ['youtube', 'vnd.youtube'],
@@ -25,7 +25,7 @@ const config: ExpoConfig = {
   },
   android: {
     package: 'com.kokialvarez.recomiendame',
-    versionCode: 5,
+    versionCode: 6,
     adaptiveIcon: {
       foregroundImage: './assets/adaptive-icon.png',
       backgroundColor: '#000000',

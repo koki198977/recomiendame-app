@@ -10,7 +10,6 @@ import {
   Dimensions,
   StyleSheet,
   Modal,
-  Linking,
 } from 'react-native';
 import { Text, Portal, Dialog, Button } from 'react-native-paper';
 import AsyncStorage from '@react-native-async-storage/async-storage';
@@ -21,6 +20,7 @@ import { LinearGradient } from 'expo-linear-gradient';
 import { Ionicons } from '@expo/vector-icons';
 import * as Progress from 'react-native-progress';
 import { theme } from '../styles/theme';
+import { useTrailerOpen } from '../hooks/useTrailerOpen';
 
 const { width } = Dimensions.get('window');
 
@@ -47,6 +47,7 @@ export default function HomeScreen() {
   const [refreshing, setRefreshing] = useState<boolean>(false);
   const [userName, setUserName] = useState<string>('');
   const [selectedItem, setSelectedItem] = useState<Recommendation | null>(null);
+  const { openTrailer } = useTrailerOpen();
 
   const fetchStats = async () => {
     try {
@@ -428,15 +429,10 @@ export default function HomeScreen() {
                 {selectedItem?.trailerUrl && (
                   <TouchableOpacity
                     style={[styles.modalButton, styles.trailerButton]}
-                    onPress={() => {
+                    onPress={() => { 
                       if (selectedItem?.trailerUrl) {
-                        Linking.openURL(selectedItem.trailerUrl).catch(() => {
-                          Toast.show({
-                            type: 'error',
-                            text1: 'Error',
-                            text2: 'No se pudo abrir el trailer',
-                          });
-                        });
+                        openTrailer(selectedItem.trailerUrl, selectedItem.tmdbId);
+                        setSelectedItem(null);
                       }
                     }}
                   >
@@ -480,6 +476,7 @@ export default function HomeScreen() {
           </View>
         </View>
       </Modal>
+
     </View>
   );
 }

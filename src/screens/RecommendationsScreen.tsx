@@ -5,7 +5,6 @@ import {
   Image,
   ActivityIndicator,
   ScrollView,
-  Linking,
   TouchableOpacity,
   StyleSheet,
   Modal,
@@ -25,6 +24,7 @@ import axios from 'axios';
 import { ENV } from '../config/env';
 import Toast from 'react-native-toast-message';
 import { theme } from '../styles/theme';
+import { useTrailerOpen } from '../hooks/useTrailerOpen';
 
 const { width } = Dimensions.get('window');
 const CARD_WIDTH = (width - 64) / 2;
@@ -48,6 +48,9 @@ export default function RecommendationsScreen() {
   const [recommendations, setRecommendations] = useState<Recommendation[]>([]);
   const [loading, setLoading] = useState(true);
   const [selectedItem, setSelectedItem] = useState<Recommendation | null>(null);
+  const [trailerVisible, setTrailerVisible] = useState(false);
+  const [trailerData, setTrailerData] = useState<{ url: string; tmdbId: number } | null>(null);
+  const { openTrailer } = useTrailerOpen();
 
   const [ratings, setRatings] = useState<any[]>([]);
   const [ratingModalVisible, setRatingModalVisible] = useState(false);
@@ -723,7 +726,10 @@ export default function RecommendationsScreen() {
                   <TouchableOpacity
                     style={styles.modalButton}
                     onPress={() => {
-                      if (selectedItem.trailerUrl) Linking.openURL(selectedItem.trailerUrl);
+                      if (selectedItem?.trailerUrl) {
+                        openTrailer(selectedItem.trailerUrl, selectedItem.tmdbId);
+                        setSelectedItem(null);
+                      }
                     }}
                   >
                     <Ionicons name="play-circle" size={20} color={theme.colors.primary} />
@@ -922,6 +928,7 @@ export default function RecommendationsScreen() {
           </ScrollView>
         </View>
       </Modal>
+
     </View>
   );
 }
