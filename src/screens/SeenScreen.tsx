@@ -10,9 +10,9 @@ import {
   Image,
   Modal,
   Dimensions,
+  Text,
 } from 'react-native';
 import { 
-  Text, 
   Searchbar, 
   Button, 
   Portal, 
@@ -103,12 +103,19 @@ export default function SeenScreen() {
         }),
       ]);
 
-      const ratingMap = (ratingsRes.data.ratings?.items || []).reduce((acc: any, r: RatingItem) => {
+      const ratingsData: RatingItem[] =
+        ratingsRes.data.ratings?.items ||
+        ratingsRes.data.ratings ||
+        ratingsRes.data.items ||
+        ratingsRes.data ||
+        [];
+
+      const ratingMap = ratingsData.reduce((acc: any, r: RatingItem) => {
         acc[r.tmdbId] = r;
         return acc;
       }, {});
 
-      setRatings(ratingsRes.data.ratings?.items || []);
+      setRatings(ratingsData);
 
       const enriched = seenRes.data.items.map((item: SeenItem) => ({
         ...item,

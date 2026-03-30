@@ -11,9 +11,9 @@ import {
   ScrollView,
   Dimensions,
   Share,
+  Text,
 } from 'react-native';
 import { 
-  Text, 
   Searchbar, 
   Button, 
   Portal, 

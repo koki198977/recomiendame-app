@@ -10,9 +10,9 @@ import {
   TouchableOpacity,
   Linking,
   Alert,
+  Text,
 } from 'react-native';
 import { 
-  Text, 
   TextInput, 
   Button as PaperButton, 
   Card, 

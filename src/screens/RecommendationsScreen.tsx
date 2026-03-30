@@ -9,14 +9,9 @@ import {
   StyleSheet,
   Modal,
   Dimensions,
-} from 'react-native';
-import { 
-  Text, 
-  Button, 
-  Portal, 
-  Dialog,
   TextInput,
-} from 'react-native-paper';
+  Text,
+} from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
 import StarRating from 'react-native-star-rating-widget';
 import AsyncStorage from '@react-native-async-storage/async-storage';
@@ -82,10 +77,10 @@ export default function RecommendationsScreen() {
       
       const now = Date.now();
       const cacheAge = cacheTimestamp ? now - parseInt(cacheTimestamp) : Infinity;
-      const fortySeconds = 40 * 1000;
+      const fiveMinutes = 5 * 60 * 1000;
       
-      // Si el caché existe y tiene menos de 40 segundos, usarlo
-      if (cachedData && cacheAge <= fortySeconds) {
+      // Si el caché existe y tiene menos de 5 minutos, usarlo
+      if (cachedData && cacheAge <= fiveMinutes) {
         const parsed = JSON.parse(cachedData);
         setRecommendations(parsed);
         setHasCachedData(true);
@@ -94,7 +89,7 @@ export default function RecommendationsScreen() {
       } else {
         // Caché expirado o no existe, generar nuevas recomendaciones
         if (cachedData) {
-          console.log('Caché expirado (>40s), generando nuevas recomendaciones...');
+          console.log('Caché expirado (>5min), generando nuevas recomendaciones...');
         }
         // Solo generar si no está ya generando
         if (!isGenerating) {
@@ -534,39 +529,36 @@ export default function RecommendationsScreen() {
 
       {/* Componente de generación de recomendaciones */}
       <View style={styles.promptContainer}>
-        <Text style={styles.promptLabel}>DESCRIBE LO QUE QUIERES VER</Text>
-        <View style={styles.inputWrapper}>
-          <TextInput
-            value={promptText}
-            onChangeText={setPromptText}
-            placeholder="Ej: Thrillers con giros impactantes..."
-            placeholderTextColor="rgba(255, 255, 255, 0.4)"
-            multiline={true}
-            style={styles.promptInput}
-            editable={!isGenerating && !isRefreshing}
-          />
-        </View>
+        <TextInput
+          value={promptText}
+          onChangeText={setPromptText}
+          placeholder="¿Qué quieres ver hoy?"
+          placeholderTextColor="rgba(255, 255, 255, 0.3)"
+          multiline={true}
+          style={styles.promptInput}
+          editable={!isGenerating && !isRefreshing}
+        />
 
         <View style={styles.actionsRow}>
           <TouchableOpacity
-            style={styles.generateButton}
+            style={[styles.generateButton, (isGenerating || isRefreshing) && styles.buttonDisabled]}
             onPress={handleGenerateRecommendations}
             disabled={isGenerating || isRefreshing}
           >
             {isGenerating ? (
-              <ActivityIndicator size="small" color={theme.colors.text} />
+              <ActivityIndicator size="small" color="#fff" />
             ) : (
-              <Text style={styles.generateButtonText}>Generar</Text>
+              <Text style={styles.generateButtonText}>✨ Generar</Text>
             )}
           </TouchableOpacity>
 
           <TouchableOpacity
-            style={styles.updateButton}
+            style={[styles.updateButton, (isGenerating || isRefreshing) && styles.buttonDisabled]}
             onPress={handleGenerateRecommendations}
             disabled={isGenerating || isRefreshing}
           >
-            {isGenerating || isRefreshing ? (
-              <ActivityIndicator size="small" color={theme.colors.text} />
+            {isRefreshing ? (
+              <ActivityIndicator size="small" color="rgba(255,255,255,0.7)" />
             ) : (
               <Text style={styles.updateButtonText}>Actualizar</Text>
             )}
@@ -603,7 +595,7 @@ export default function RecommendationsScreen() {
                 </View>
               )}
 
-              {item.voteAverage && (
+              {item.voteAverage != null && item.voteAverage > 0 && (
                 <View style={styles.ratingBadge}>
                   <Ionicons name="star" size={12} color="#F59E0B" />
                   <Text style={styles.ratingBadgeText}>{item.voteAverage.toFixed(1)}</Text>
@@ -683,11 +675,13 @@ export default function RecommendationsScreen() {
                   <Text style={styles.modalTitle}>
                     {selectedItem?.title}
                   </Text>
-                  {selectedItem?.voteAverage && (
+                  {selectedItem?.voteAverage != null && selectedItem.voteAverage > 0 && (
                     <View style={styles.modalRating}>
                       <Ionicons name="star" size={16} color="#F59E0B" />
                       <Text style={styles.modalRatingText}>{selectedItem.voteAverage.toFixed(1)}</Text>
-                      <Text style={styles.modalRatingLabel}>Estreno {new Date(selectedItem.releaseDate).getFullYear()}</Text>
+                      {selectedItem.releaseDate ? (
+                        <Text style={styles.modalRatingLabel}>Estreno {new Date(selectedItem.releaseDate).getFullYear()}</Text>
+                      ) : null}
                     </View>
                   )}
                 </View>
@@ -955,32 +949,56 @@ const styles = StyleSheet.create({
   promptContainer: {
     backgroundColor: theme.colors.surface,
     borderRadius: theme.borderRadius.lg,
-    padding: theme.spacing.lg,
+    padding: theme.spacing.md,
     marginBottom: theme.spacing.lg,
     borderWidth: 1,
-    borderColor: 'rgba(139, 92, 246, 0.2)',
-  },
-  promptLabel: {
-    fontSize: theme.fontSize.xs,
-    fontWeight: '600',
-    color: theme.colors.textSecondary,
-    letterSpacing: 1,
-    marginBottom: theme.spacing.xs,
-  },
-  inputWrapper: {
-    marginBottom: theme.spacing.sm,
+    borderColor: 'rgba(139, 92, 246, 0.25)',
   },
   promptInput: {
-    backgroundColor: 'rgba(255, 255, 255, 0.05)',
     color: '#FFFFFF',
     fontSize: theme.fontSize.md,
-    padding: theme.spacing.md,
+    paddingHorizontal: theme.spacing.sm,
+    paddingVertical: theme.spacing.sm,
+    minHeight: 44,
+    maxHeight: 80,
+    textAlignVertical: 'top',
+    marginBottom: theme.spacing.sm,
+  },
+  actionsRow: {
+    flexDirection: 'row',
+    gap: theme.spacing.sm,
+  },
+  generateButton: {
+    flex: 2,
+    backgroundColor: theme.colors.primary,
+    paddingVertical: 10,
     borderRadius: theme.borderRadius.md,
-    minHeight: 40,
-    maxHeight: 60,
-    textAlignVertical: 'center',
+    alignItems: 'center',
+    justifyContent: 'center',
+  },
+  generateButtonText: {
+    color: '#fff',
+    fontSize: theme.fontSize.sm,
+    fontWeight: '700',
+    letterSpacing: 0.3,
+  },
+  updateButton: {
+    flex: 1,
+    backgroundColor: 'transparent',
+    paddingVertical: 10,
+    borderRadius: theme.borderRadius.md,
+    alignItems: 'center',
+    justifyContent: 'center',
     borderWidth: 1,
-    borderColor: 'rgba(139, 92, 246, 0.3)',
+    borderColor: 'rgba(255,255,255,0.15)',
+  },
+  updateButtonText: {
+    color: 'rgba(255,255,255,0.6)',
+    fontSize: theme.fontSize.sm,
+    fontWeight: '500',
+  },
+  buttonDisabled: {
+    opacity: 0.5,
   },
   suggestionsContainer: {
     flexDirection: 'row',
@@ -999,36 +1017,6 @@ const styles = StyleSheet.create({
   suggestionText: {
     fontSize: theme.fontSize.xs,
     color: theme.colors.text,
-  },
-  actionsRow: {
-    flexDirection: 'row',
-    gap: theme.spacing.sm,
-  },
-  generateButton: {
-    flex: 2,
-    backgroundColor: theme.colors.primary,
-    paddingVertical: theme.spacing.sm,
-    borderRadius: theme.borderRadius.md,
-    alignItems: 'center',
-    justifyContent: 'center',
-  },
-  generateButtonText: {
-    color: theme.colors.text,
-    fontSize: theme.fontSize.sm,
-    fontWeight: '600',
-  },
-  updateButton: {
-    flex: 1,
-    backgroundColor: theme.colors.surfaceLight,
-    paddingVertical: theme.spacing.sm,
-    borderRadius: theme.borderRadius.md,
-    alignItems: 'center',
-    justifyContent: 'center',
-  },
-  updateButtonText: {
-    color: theme.colors.text,
-    fontSize: theme.fontSize.sm,
-    fontWeight: '600',
   },
   readyText: {
     fontSize: theme.fontSize.sm,

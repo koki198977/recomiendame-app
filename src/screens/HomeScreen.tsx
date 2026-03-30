@@ -10,15 +10,13 @@ import {
   Dimensions,
   StyleSheet,
   Modal,
+  Text,
 } from 'react-native';
-import { Text, Portal, Dialog, Button } from 'react-native-paper';
 import AsyncStorage from '@react-native-async-storage/async-storage';
 import axios from 'axios';
 import Toast from 'react-native-toast-message';
 import { ENV } from '../config/env';
-import { LinearGradient } from 'expo-linear-gradient';
 import { Ionicons } from '@expo/vector-icons';
-import * as Progress from 'react-native-progress';
 import { theme } from '../styles/theme';
 import { useTrailerOpen } from '../hooks/useTrailerOpen';
 
@@ -260,17 +258,7 @@ export default function HomeScreen() {
                     </Text>
                   </View>
                   <View style={styles.ratingCircle}>
-                    <Progress.Circle
-                      size={70}
-                      progress={stats.averageRating / 5}
-                      showsText={true}
-                      formatText={() => stats.averageRating.toFixed(1)}
-                      thickness={5}
-                      color={theme.colors.primary}
-                      unfilledColor={theme.colors.border}
-                      borderWidth={0}
-                      textStyle={styles.ratingText}
-                    />
+                    <Text style={styles.ratingText}>{stats.averageRating.toFixed(1)}</Text>
                   </View>
                 </View>
               </View>
@@ -317,7 +305,7 @@ export default function HomeScreen() {
                           </Text>
                         </View>
                       )}
-                      {item.voteAverage && (
+                      {item.voteAverage != null && item.voteAverage > 0 && (
                         <View style={styles.ratingBadge}>
                           <Ionicons name="star" size={12} color="#F59E0B" />
                           <Text style={styles.ratingBadgeText}>{item.voteAverage.toFixed(1)}</Text>
@@ -383,15 +371,15 @@ export default function HomeScreen() {
                   <Text style={styles.modalTitle}>
                     {selectedItem?.title}
                   </Text>
-                  {selectedItem?.voteAverage && (
+                  {selectedItem?.voteAverage != null && selectedItem.voteAverage > 0 && (
                     <View style={styles.modalRating}>
                       <Ionicons name="star" size={16} color="#F59E0B" />
                       <Text style={styles.modalRatingText}>{selectedItem.voteAverage.toFixed(1)}</Text>
-                      {selectedItem.releaseDate && (
+                      {selectedItem.releaseDate ? (
                         <Text style={styles.modalRatingLabel}>
-                          Estreno {selectedItem.releaseDate ? 'pendiente' : new Date(selectedItem.releaseDate).getFullYear()}
+                          {new Date(selectedItem.releaseDate).getFullYear()}
                         </Text>
-                      )}
+                      ) : null}
                     </View>
                   )}
                 </View>
@@ -586,6 +574,14 @@ const styles = StyleSheet.create({
   },
   ratingCircle: {
     marginLeft: theme.spacing.md,
+    width: 70,
+    height: 70,
+    borderRadius: 35,
+    borderWidth: 4,
+    borderColor: theme.colors.primary,
+    alignItems: 'center',
+    justifyContent: 'center',
+    backgroundColor: 'rgba(139, 92, 246, 0.1)',
   },
   ratingText: {
     fontSize: theme.fontSize.md,
