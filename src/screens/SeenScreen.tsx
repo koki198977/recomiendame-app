@@ -26,6 +26,7 @@ import { ENV } from '../config/env';
 import Toast from 'react-native-toast-message';
 import StarRating from 'react-native-star-rating-widget';
 import { theme } from '../styles/theme';
+import ChapiTip from '../components/ChapiTip';
 
 const { width } = Dimensions.get('window');
 const CARD_WIDTH = (width - 64) / 2;
@@ -67,6 +68,7 @@ export default function SeenScreen() {
 
   const [page, setPage] = useState(0);
   const [hasNextPage, setHasNextPage] = useState(true);
+  const [totalSeen, setTotalSeen] = useState(0);
   const [loadingMore, setLoadingMore] = useState(false);
   const [searchQuery, setSearchQuery] = useState('');
 
@@ -124,6 +126,9 @@ export default function SeenScreen() {
 
       if (reset) {
         setSeen(enriched);
+        const total = seenRes.data.total ?? seenRes.data.totalItems ?? null;
+        if (total !== null) setTotalSeen(total);
+        else setTotalSeen(enriched.length);
       } else {
         setSeen(prev => {
           const combined = [...prev, ...enriched];
@@ -425,6 +430,18 @@ export default function SeenScreen() {
             }
           }}
           onEndReachedThreshold={0.5}
+          ListHeaderComponent={
+            <ChapiTip
+              message={
+                totalSeen === 0
+                  ? '¡Aún no tienes nada visto! Empieza a marcar lo que ves 👁️'
+                  : totalSeen < 10
+                  ? `${totalSeen} títulos vistos. ¡Buen comienzo! 🎬`
+                  : `¡${totalSeen} títulos vistos! Eres todo un cinéfilo 🏆`
+              }
+              image={require('../../assets/chapipelicula3.png')}
+            />
+          }
           ListFooterComponent={
             loadingMore ? (
               <View style={styles.loadingMore}>

@@ -27,6 +27,7 @@ import AsyncStorage from '@react-native-async-storage/async-storage';
 import Toast from 'react-native-toast-message';
 import { ENV } from '../config/env';
 import { theme } from '../styles/theme';
+import ChapiTip from '../components/ChapiTip';
 
 const { width } = Dimensions.get('window');
 const CARD_WIDTH = (width - 64) / 2;
@@ -35,6 +36,7 @@ export default function FavoritesScreen() {
   const [favorites, setFavorites] = useState<any[]>([]);
   const [favoritesPage, setFavoritesPage] = useState(0);
   const [hasNextPage, setHasNextPage] = useState(true);
+  const [totalFavorites, setTotalFavorites] = useState(0);
   const [loading, setLoading] = useState(true);
   const [loadingMore, setLoadingMore] = useState(false);
   const [refreshing, setRefreshing] = useState(false);
@@ -82,9 +84,12 @@ export default function FavoritesScreen() {
 
       const newItems = res.data.favorites.items || [];
       const totalPages = res.data.favorites.totalPages || 1;
+      const total = res.data.favorites.total ?? res.data.favorites.totalItems ?? null;
 
       if (!append) {
         setFavorites(newItems);
+        if (total !== null) setTotalFavorites(total);
+        else if (page === 0) setTotalFavorites(newItems.length);
       } else {
         setFavorites(prev => {
           const combined = [...prev, ...newItems];
@@ -358,6 +363,18 @@ export default function FavoritesScreen() {
             fetchFavorites(searchQuery, favoritesPage + 1, true);
           }
         }}
+        ListHeaderComponent={
+          <ChapiTip
+            message={
+              totalFavorites === 0
+                ? '¡Aún no tienes favoritos! Agrega lo que más te gustó ❤️'
+                : totalFavorites < 5
+                ? 'Tus favoritos están creciendo. ¡Sigue agregando! ⭐'
+                : `¡${totalFavorites} favoritos! Tienes un gusto increíble 🏆`
+            }
+            image={require('../../assets/chapifavorito.png')}
+          />
+        }
         ListFooterComponent={
           loadingMore ? (
             <View style={styles.loadingMore}>

@@ -19,6 +19,7 @@ import { ENV } from '../config/env';
 import { Ionicons } from '@expo/vector-icons';
 import { theme } from '../styles/theme';
 import { useTrailerOpen } from '../hooks/useTrailerOpen';
+import ChapiTip from '../components/ChapiTip';
 
 const { width } = Dimensions.get('window');
 
@@ -176,6 +177,17 @@ export default function HomeScreen() {
     }
   };
 
+  const getChapiMessage = (s: typeof stats): string => {
+    if (!s) return '¡Hola! Soy Chapi, tu asistente de entretenimiento 🎬';
+    if (s.wishlistTotal > 10) return `Tienes ${s.wishlistTotal} pelis en tu wishlist. ¡Hora de ponerse al día! 🍿`;
+    if (s.seenTotal === 0) return '¡Empieza a marcar lo que ves y te daré mejores recomendaciones! 👀';
+    if (s.ratingsTotal === 0) return 'Califica lo que has visto y afinaré tus recomendaciones 🎯';
+    if (s.averageRating >= 4.5) return '¡Qué buen gusto tienes! Promedio de ' + s.averageRating.toFixed(1) + ' estrellas ⭐';
+    if (s.favoriteTotal > 20) return `${s.favoriteTotal} favoritos... ¡eres todo un cinéfilo! 🏆`;
+    if (s.seenTotal > 50) return `¡${s.seenTotal} títulos vistos! Impresionante colección 🎖️`;
+    return `Llevas ${s.seenTotal} títulos vistos. ¡Sigue así! 🚀`;
+  };
+
   if (loading && !refreshing) {
     return (
       <View style={styles.loadingContainer}>
@@ -212,6 +224,9 @@ export default function HomeScreen() {
 
         {stats ? (
           <>
+            {/* Chapi tip */}
+            <ChapiTip message={getChapiMessage(stats)} />
+
             {/* Stats Cards Grid */}
             <View style={styles.statsGrid}>
               <View style={styles.statCard}>

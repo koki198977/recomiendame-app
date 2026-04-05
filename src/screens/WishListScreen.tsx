@@ -27,6 +27,7 @@ import AsyncStorage from '@react-native-async-storage/async-storage';
 import Toast from 'react-native-toast-message';
 import { ENV } from '../config/env';
 import { theme } from '../styles/theme';
+import ChapiTip from '../components/ChapiTip';
 
 const { width } = Dimensions.get('window');
 const CARD_WIDTH = (width - 64) / 2;
@@ -35,6 +36,7 @@ export default function WishListScreen() {
   const [items, setItems] = useState<any[]>([]);
   const [page, setPage] = useState(0);
   const [hasNextPage, setHasNextPage] = useState(true);
+  const [totalWishlist, setTotalWishlist] = useState(0);
   const [loading, setLoading] = useState(true);
   const [loadingMore, setLoadingMore] = useState(false);
   const [refreshing, setRefreshing] = useState(false);
@@ -82,9 +84,12 @@ export default function WishListScreen() {
 
       const newItems = res.data?.wishlist?.items || [];
       const totalPages = res.data?.wishlist?.totalPages ?? 1;
+      const total = res.data?.wishlist?.total ?? res.data?.wishlist?.totalItems ?? null;
 
       if (!append) {
         setItems(newItems);
+        if (total !== null) setTotalWishlist(total);
+        else if (pageIndex === 0) setTotalWishlist(newItems.length);
       } else {
         setItems((prev) => {
           const combined = [...prev, ...newItems];
@@ -381,6 +386,18 @@ export default function WishListScreen() {
             fetchWishList(page + 1, true);
           }
         }}
+        ListHeaderComponent={
+          <ChapiTip
+            message={
+              totalWishlist === 0
+                ? '¡Tu wishlist está vacía! Agrega lo que quieres ver pronto 💖'
+                : totalWishlist < 5
+                ? 'Buena lista. ¡Sigue agregando pendientes! 📋'
+                : `${totalWishlist} pendientes en tu wishlist. ¡A ponerse al día! 🎬`
+            }
+            image={require('../../assets/chapiwhishlist.png')}
+          />
+        }
         ListFooterComponent={
           loadingMore ? (
             <View style={styles.loadingMore}>

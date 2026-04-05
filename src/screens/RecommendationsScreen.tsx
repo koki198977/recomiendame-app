@@ -20,6 +20,7 @@ import { ENV } from '../config/env';
 import Toast from 'react-native-toast-message';
 import { theme } from '../styles/theme';
 import { useTrailerOpen } from '../hooks/useTrailerOpen';
+import ChapiLoader from '../components/ChapiLoader';
 
 const { width } = Dimensions.get('window');
 const CARD_WIDTH = (width - 64) / 2;
@@ -515,12 +516,8 @@ export default function RecommendationsScreen() {
     }
   };
 
-  if (loading) {
-    return (
-      <View style={styles.loadingContainer}>
-        <ActivityIndicator size="large" color={theme.colors.primary} />
-      </View>
-    );
+  if (loading || isGenerating) {
+    return <ChapiLoader />;
   }
 
   return (
