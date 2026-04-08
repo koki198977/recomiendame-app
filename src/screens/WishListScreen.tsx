@@ -12,6 +12,7 @@ import {
   Dimensions,
   Linking,
   Text,
+  Share,
 } from 'react-native';
 import { 
   Searchbar, 
@@ -60,6 +61,10 @@ export default function WishListScreen() {
   const [searchResults, setSearchResults] = useState<any[]>([]);
   const [searching, setSearching] = useState(false);
   const [addingId, setAddingId] = useState<number | null>(null);
+
+  // Filtros cliente
+  const [filterType, setFilterType] = useState<'all' | 'movie' | 'tv'>('all');
+  const [filterDecade, setFilterDecade] = useState<string>('all');
 
   const fetchWishList = async (pageIndex = 0, append = false) => {
     const take = 10;
@@ -337,9 +342,53 @@ export default function WishListScreen() {
     );
   }
 
+  // Décadas disponibles derivadas de los items cargados
+  const availableDecades = Array.from(new Set(
+    items
+      .map(i => {
+        const d = i.tmdb?.releaseDate || i.releaseDate;
+        if (!d) return null;
+        const year = new Date(d).getFullYear();
+        return `${Math.floor(year / 10) * 10}`;
+      })
+      .filter(Boolean)
+  )).sort().reverse() as string[];
+
+  const filteredItems = items.filter(item => {
+    const type = item.tmdb?.mediaType || item.mediaType;
+    if (filterType !== 'all' && type !== filterType) return false;
+    if (filterDecade !== 'all') {
+      const d = item.tmdb?.releaseDate || item.releaseDate;
+      if (!d) return false;
+      const decade = `${Math.floor(new Date(d).getFullYear() / 10) * 10}`;
+      if (decade !== filterDecade) return false;
+    }
+    return true;
+  });
+
+  const handleShare = async () => {
+    try {
+      const userId = await AsyncStorage.getItem('userId');
+      if (!userId) return;
+      const link = `https://recomiendameapp.cl/shared-wishlist/${userId}`;
+      await Share.share({
+        message: `💖 Mira mi wishlist en Recomiéndame:\n${link}`,
+        title: 'Mi wishlist',
+      });
+    } catch {
+      Toast.show({ type: 'error', text1: 'No se pudo compartir' });
+    }
+  };
+
   return (
     <View style={styles.container}>
-      <Text style={styles.title}>💖 Wishlist</Text>
+      <View style={styles.titleRow}>
+        <Text style={styles.title}>💖 Wishlist</Text>
+        <TouchableOpacity style={styles.shareBtn} onPress={handleShare}>
+          <Ionicons name="share-outline" size={20} color="#a855f7" />
+          <Text style={styles.shareBtnText}>Compartir</Text>
+        </TouchableOpacity>
+      </View>
       <Text style={styles.subtitle}>
         Guarda los títulos que quieres ver más adelante. Puedes buscarlos, ordenarlos y añadir nuevos en cualquier momento.
       </Text>
@@ -364,7 +413,7 @@ export default function WishListScreen() {
       </TouchableOpacity>
 
       <FlatList
-        data={items}
+        data={filteredItems}
         keyExtractor={item => ((item.tmdb?.id ?? item.tmdbId).toString())}
         numColumns={2}
         columnWrapperStyle={styles.row}
@@ -387,16 +436,43 @@ export default function WishListScreen() {
           }
         }}
         ListHeaderComponent={
-          <ChapiTip
-            message={
-              totalWishlist === 0
-                ? '¡Tu wishlist está vacía! Agrega lo que quieres ver pronto 💖'
-                : totalWishlist < 5
-                ? 'Buena lista. ¡Sigue agregando pendientes! 📋'
-                : `${totalWishlist} pendientes en tu wishlist. ¡A ponerse al día! 🎬`
-            }
-            image={require('../../assets/chapiwhishlist.png')}
-          />
+          <>
+            {/* Filtros */}
+            <ScrollView horizontal showsHorizontalScrollIndicator={false} style={styles.filtersRow} contentContainerStyle={{ gap: 8, paddingRight: 8, paddingBottom: 4 }}>
+              {(['all', 'movie', 'tv'] as const).map(t => (
+                <TouchableOpacity
+                  key={t}
+                  style={[styles.filterChip, filterType === t && styles.filterChipActive]}
+                  onPress={() => setFilterType(t)}
+                >
+                  <Text style={[styles.filterChipText, filterType === t && styles.filterChipTextActive]}>
+                    {t === 'all' ? 'Todos' : t === 'movie' ? '🎬 Películas' : '📺 Series'}
+                  </Text>
+                </TouchableOpacity>
+              ))}
+              {availableDecades.map(decade => (
+                <TouchableOpacity
+                  key={decade}
+                  style={[styles.filterChip, filterDecade === decade && styles.filterChipActive]}
+                  onPress={() => setFilterDecade(prev => prev === decade ? 'all' : decade)}
+                >
+                  <Text style={[styles.filterChipText, filterDecade === decade && styles.filterChipTextActive]}>
+                    {decade}s
+                  </Text>
+                </TouchableOpacity>
+              ))}
+            </ScrollView>
+            <ChapiTip
+              message={
+                totalWishlist === 0
+                  ? '¡Tu wishlist está vacía! Agrega lo que quieres ver pronto 💖'
+                  : totalWishlist < 5
+                  ? 'Buena lista. ¡Sigue agregando pendientes! 📋'
+                  : `${totalWishlist} pendientes en tu wishlist. ¡A ponerse al día! 🎬`
+              }
+              image={require('../../assets/chapiwhishlist.png')}
+            />
+          </>
         }
         ListFooterComponent={
           loadingMore ? (
@@ -850,6 +926,53 @@ const styles = StyleSheet.create({
     color: theme.colors.text,
     marginBottom: theme.spacing.xs,
   },
+  titleRow: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'space-between',
+    marginBottom: theme.spacing.md,
+  },
+  filtersRow: {
+    marginBottom: theme.spacing.md,
+    overflow: 'visible',
+  },
+  filterChip: {
+    paddingHorizontal: 14,
+    paddingVertical: 7,
+    borderRadius: 20,
+    backgroundColor: theme.colors.surface,
+    borderWidth: 1,
+    borderColor: theme.colors.surfaceLight,
+  },
+  filterChipActive: {
+    backgroundColor: 'rgba(168,85,247,0.15)',
+    borderColor: '#a855f7',
+  },
+  filterChipText: {
+    color: theme.colors.textSecondary,
+    fontSize: 13,
+    fontWeight: '500',
+  },
+  filterChipTextActive: {
+    color: '#a855f7',
+    fontWeight: '700',
+  },
+  shareBtn: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 6,
+    backgroundColor: 'rgba(168,85,247,0.12)',
+    paddingHorizontal: 14,
+    paddingVertical: 8,
+    borderRadius: 20,
+    borderWidth: 1,
+    borderColor: 'rgba(168,85,247,0.3)',
+  },
+  shareBtnText: {
+    color: '#a855f7',
+    fontSize: 13,
+    fontWeight: '600',
+  },
   subtitle: {
     fontSize: theme.fontSize.sm,
     color: theme.colors.textSecondary,
@@ -877,11 +1000,6 @@ const styles = StyleSheet.create({
     color: theme.colors.text,
     fontSize: theme.fontSize.md,
     fontWeight: '600',
-  },
-  searchbar: {
-    marginBottom: theme.spacing.md,
-    backgroundColor: theme.colors.surface,
-    borderRadius: theme.borderRadius.md,
   },
   listContent: {
     paddingBottom: 100,

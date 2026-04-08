@@ -17,6 +17,7 @@ import RecommendationsScreen from './src/screens/RecommendationsScreen';
 import WishListScreen from './src/screens/WishListScreen';
 import GuestScreen from './src/screens/GuestScreen';
 import SharedFavoritesScreen from './src/screens/SharedFavoritesScreen';
+import SharedWishListScreen from './src/screens/SharedWishListScreen';
 
 import { API_URL } from '@env';
 
@@ -37,6 +38,11 @@ const customTheme = {
 type Screen = 'loading' | 'login' | 'register' | 'forgotPassword' | 'home' | 'guest';
 
 type SharedFavoritesParams = {
+  userId: string;
+  ownerName?: string;
+};
+
+type SharedWishListParams = {
   userId: string;
   ownerName?: string;
 };
@@ -228,6 +234,7 @@ const toastStyles = StyleSheet.create({
 export default function App() {
   const [currentScreen, setCurrentScreen] = useState<Screen>('loading');
   const [sharedParams, setSharedParams] = useState<SharedFavoritesParams | null>(null);
+  const [sharedWishParams, setSharedWishParams] = useState<SharedWishListParams | null>(null);
 
   const handleDeepLink = (url: string) => {
     // Ignorar URLs internas de Expo Go
@@ -241,7 +248,14 @@ export default function App() {
       console.log('[DeepLink] userId extraído:', match[1]);
       setSharedParams({ userId: match[1] });
     } else {
-      console.log('[DeepLink] no se pudo extraer userId del URL');
+      const wishMatch =
+        url.match(/recomiendameapp\.cl\/shared-wishlist\/([^/?]+)/) ||
+        url.match(/shared-wishlist\/([^/?]+)/);
+      if (wishMatch) {
+        setSharedWishParams({ userId: wishMatch[1] });
+      } else {
+        console.log('[DeepLink] no se pudo extraer userId del URL');
+      }
     }
   };
 
@@ -375,6 +389,21 @@ export default function App() {
                 setCurrentScreen('login');
               }}
               onBack={() => setSharedParams(null)}
+            />
+          </View>
+        )}
+
+        {/* Overlay de wishlist compartida */}
+        {sharedWishParams && (
+          <View style={StyleSheet.absoluteFill}>
+            <SharedWishListScreen
+              userId={sharedWishParams.userId}
+              ownerName={sharedWishParams.ownerName}
+              onLogin={() => {
+                setSharedWishParams(null);
+                setCurrentScreen('login');
+              }}
+              onBack={() => setSharedWishParams(null)}
             />
           </View>
         )}
