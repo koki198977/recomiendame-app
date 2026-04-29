@@ -40,6 +40,11 @@ interface Recommendation {
   trailerUrl?: string;
 }
 
+// Cache a nivel de módulo: persiste mientras la app esté abierta
+// Se resetea solo si el usuario recarga la app completamente
+let _moduleCache: Recommendation[] = [];
+let _moduleCacheLoaded = false;
+
 export default function RecommendationsScreen() {
   const [recommendations, setRecommendations] = useState<Recommendation[]>([]);
   const [loading, setLoading] = useState(true);
@@ -59,48 +64,49 @@ export default function RecommendationsScreen() {
   const [isRefreshing, setIsRefreshing] = useState(false);
   const [hasCachedData, setHasCachedData] = useState(false);
 
-  // Estados para trackear items marcados
   const [seenItems, setSeenItems] = useState<Set<number>>(new Set());
   const [favoriteItems, setFavoriteItems] = useState<Set<number>>(new Set());
   const [wishlistItems, setWishlistItems] = useState<Set<number>>(new Set());
   const [dislikedItems, setDislikedItems] = useState<Set<number>>(new Set());
+  const [isHistory, setIsHistory] = useState(true); // true = mostrando historial, false = generadas
 
   useEffect(() => {
-    loadCachedRecommendations();
+    // Si ya tenemos datos en el cache de módulo, usarlos directamente sin llamar a la API
+    if (_moduleCacheLoaded && _moduleCache.length > 0) {
+      setRecommendations(_moduleCache);
+      setLoading(false);
+      setIsHistory(true);
+    } else {
+      // Primera vez que se entra: pedir historial
+      fetchRecommendationHistory();
+    }
     fetchRatings();
     fetchUserLists();
   }, []);
 
-  const loadCachedRecommendations = async () => {
+  // Carga el historial de las últimas 15 recomendaciones (rápido, sin IA)
+  const fetchRecommendationHistory = async () => {
+    setLoading(true);
+    setIsHistory(true);
     try {
-      const cachedData = await AsyncStorage.getItem('cached_recommendations');
-      const cacheTimestamp = await AsyncStorage.getItem('recommendations_cache_timestamp');
-      
-      const now = Date.now();
-      const cacheAge = cacheTimestamp ? now - parseInt(cacheTimestamp) : Infinity;
-      const fiveMinutes = 5 * 60 * 1000;
-      
-      // Si el caché existe y tiene menos de 5 minutos, usarlo
-      if (cachedData && cacheAge <= fiveMinutes) {
-        const parsed = JSON.parse(cachedData);
-        setRecommendations(parsed);
-        setHasCachedData(true);
-        setLoading(false);
-        console.log('Usando caché válido, edad:', Math.round(cacheAge / 1000), 'segundos');
-      } else {
-        // Caché expirado o no existe, generar nuevas recomendaciones
-        if (cachedData) {
-          console.log('Caché expirado (>5min), generando nuevas recomendaciones...');
-        }
-        // Solo generar si no está ya generando
-        if (!isGenerating) {
-          handleGenerateRecommendations();
-        }
-      }
+      const token = await AsyncStorage.getItem('token');
+      const res = await axios.get(
+        `${ENV.API_URL}/recommendations/history?skip=0&take=15`,
+        { headers: { Authorization: `Bearer ${token}` } }
+      );
+      // El endpoint devuelve { total, items: [...] }
+      const items: Recommendation[] = Array.isArray(res.data)
+        ? res.data
+        : res.data.items || res.data.recommendations || res.data.data || [];
+      setRecommendations(items);
+      // Guardar en cache de módulo para que al volver no se repita el request
+      _moduleCache = items;
+      _moduleCacheLoaded = true;
     } catch (err) {
-      if (!isGenerating) {
-        handleGenerateRecommendations();
-      }
+      console.warn('Error cargando historial:', err);
+      Toast.show({ type: 'error', text1: 'Error cargando historial' });
+    } finally {
+      setLoading(false);
     }
   };
 
@@ -485,7 +491,8 @@ export default function RecommendationsScreen() {
     if (isGenerating) return;
 
     setIsGenerating(true);
-    setLoading(false); // Asegurar que loading esté en false
+    setIsHistory(false);
+    setLoading(false);
     
     try {
       const token = await AsyncStorage.getItem('token');
@@ -503,9 +510,9 @@ export default function RecommendationsScreen() {
       setRecommendations(newItems);
       setPromptText('');
 
-      // Actualizar caché con las nuevas recomendaciones
-      await AsyncStorage.setItem('cached_recommendations', JSON.stringify(newItems));
-      await AsyncStorage.setItem('recommendations_cache_timestamp', Date.now().toString());
+      // Guardar en cache de módulo (persiste al cambiar de tab)
+      _moduleCache = newItems;
+      _moduleCacheLoaded = true;
 
       Toast.show({ type: 'success', text1: '🎯 Nuevas recomendaciones generadas' });
     } catch (error) {
@@ -529,44 +536,32 @@ export default function RecommendationsScreen() {
         <TextInput
           value={promptText}
           onChangeText={setPromptText}
-          placeholder="¿Qué quieres ver hoy?"
+          placeholder="¿Qué tipo de película quieres ver hoy?"
           placeholderTextColor="rgba(255, 255, 255, 0.3)"
           multiline={true}
           style={styles.promptInput}
           editable={!isGenerating && !isRefreshing}
         />
 
-        <View style={styles.actionsRow}>
-          <TouchableOpacity
-            style={[styles.generateButton, (isGenerating || isRefreshing) && styles.buttonDisabled]}
-            onPress={handleGenerateRecommendations}
-            disabled={isGenerating || isRefreshing}
-          >
-            {isGenerating ? (
-              <ActivityIndicator size="small" color="#fff" />
-            ) : (
-              <Text style={styles.generateButtonText}>✨ Generar</Text>
-            )}
-          </TouchableOpacity>
-
-          <TouchableOpacity
-            style={[styles.updateButton, (isGenerating || isRefreshing) && styles.buttonDisabled]}
-            onPress={handleGenerateRecommendations}
-            disabled={isGenerating || isRefreshing}
-          >
-            {isRefreshing ? (
-              <ActivityIndicator size="small" color="rgba(255,255,255,0.7)" />
-            ) : (
-              <Text style={styles.updateButtonText}>Actualizar</Text>
-            )}
-          </TouchableOpacity>
-        </View>
+        <TouchableOpacity
+          style={[styles.generateButton, isGenerating && styles.buttonDisabled]}
+          onPress={handleGenerateRecommendations}
+          disabled={isGenerating}
+        >
+          {isGenerating ? (
+            <ActivityIndicator size="small" color="#fff" />
+          ) : (
+            <Text style={styles.generateButtonText}>✨ Generar nuevas recomendaciones</Text>
+          )}
+        </TouchableOpacity>
       </View>
 
       {recommendations.length > 0 && (
         <View style={styles.recommendationsHeader}>
           <Text style={styles.recommendationsCount}>
-            {recommendations.length} recomendaciones generadas
+            {isHistory
+              ? `Últimas ${recommendations.length} recomendaciones`
+              : `${recommendations.length} recomendaciones generadas`}
           </Text>
         </View>
       )}
@@ -966,16 +961,21 @@ const styles = StyleSheet.create({
     gap: theme.spacing.sm,
   },
   generateButton: {
-    flex: 2,
+    alignSelf: 'stretch',
     backgroundColor: theme.colors.primary,
-    paddingVertical: 10,
+    paddingVertical: 14,
     borderRadius: theme.borderRadius.md,
     alignItems: 'center',
     justifyContent: 'center',
+    shadowColor: '#7C3AED',
+    shadowOffset: { width: 0, height: 4 },
+    shadowOpacity: 0.45,
+    shadowRadius: 10,
+    elevation: 8,
   },
   generateButtonText: {
     color: '#fff',
-    fontSize: theme.fontSize.sm,
+    fontSize: theme.fontSize.md,
     fontWeight: '700',
     letterSpacing: 0.3,
   },

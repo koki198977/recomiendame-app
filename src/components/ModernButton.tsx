@@ -1,5 +1,6 @@
 import React from 'react';
-import { TouchableOpacity, Text, StyleSheet, ActivityIndicator } from 'react-native';
+import { TouchableOpacity, Text, StyleSheet, ActivityIndicator, View } from 'react-native';
+import { LinearGradient } from 'expo-linear-gradient';
 import { Ionicons } from '@expo/vector-icons';
 import { theme } from '../styles/theme';
 
@@ -24,70 +25,116 @@ export const ModernButton: React.FC<ModernButtonProps> = ({
   size = 'medium',
   fullWidth = false,
 }) => {
-  const getButtonStyle = () => {
-    const baseStyle = [styles.button, styles[size]];
-    if (fullWidth) baseStyle.push(styles.fullWidth);
-    if (disabled) baseStyle.push(styles.disabled);
-    
-    switch (variant) {
-      case 'primary':
-        return [...baseStyle, styles.primary];
-      case 'secondary':
-        return [...baseStyle, styles.secondary];
-      case 'outline':
-        return [...baseStyle, styles.outline];
-      case 'ghost':
-        return [...baseStyle, styles.ghost];
-      default:
-        return baseStyle;
-    }
-  };
+  const iconSize = size === 'small' ? 16 : size === 'large' ? 22 : 20;
+  const isLight = variant === 'outline' || variant === 'ghost';
 
-  const getTextStyle = () => {
-    const baseStyle = [styles.text, styles[`${size}Text`]];
-    
-    switch (variant) {
-      case 'outline':
-      case 'ghost':
-        return [...baseStyle, styles.outlineText];
-      default:
-        return baseStyle;
-    }
-  };
+  const sizeStyle = styles[size];
+  const baseWrapperStyle = [
+    styles.wrapper,
+    fullWidth && styles.fullWidth,
+    disabled && styles.disabled,
+  ];
 
-  return (
-    <TouchableOpacity
-      style={getButtonStyle()}
-      onPress={onPress}
-      disabled={disabled || loading}
-      activeOpacity={0.7}
-    >
+  const content = (
+    <>
       {loading ? (
-        <ActivityIndicator color={variant === 'outline' || variant === 'ghost' ? theme.colors.primary : theme.colors.text} />
+        <ActivityIndicator color={isLight ? theme.colors.primaryGlow : '#fff'} />
       ) : (
         <>
           {icon && (
-            <Ionicons 
-              name={icon} 
-              size={size === 'small' ? 16 : size === 'large' ? 24 : 20} 
-              color={variant === 'outline' || variant === 'ghost' ? theme.colors.primary : theme.colors.text}
+            <Ionicons
+              name={icon}
+              size={iconSize}
+              color={isLight ? theme.colors.primaryGlow : '#fff'}
               style={styles.icon}
             />
           )}
-          <Text style={getTextStyle()}>{title}</Text>
+          <Text style={[styles.text, styles[`${size}Text` as keyof typeof styles] as any, isLight && styles.outlineText]}>
+            {title}
+          </Text>
         </>
       )}
+    </>
+  );
+
+  if (variant === 'primary') {
+    return (
+      <TouchableOpacity
+        style={[...baseWrapperStyle]}
+        onPress={onPress}
+        disabled={disabled || loading}
+        activeOpacity={0.82}
+      >
+        <LinearGradient
+          colors={['#7C3AED', '#A855F7']}
+          start={{ x: 0, y: 0 }}
+          end={{ x: 1, y: 0 }}
+          style={[styles.gradient, sizeStyle]}
+        >
+          {content}
+        </LinearGradient>
+      </TouchableOpacity>
+    );
+  }
+
+  if (variant === 'secondary') {
+    return (
+      <TouchableOpacity
+        style={[...baseWrapperStyle]}
+        onPress={onPress}
+        disabled={disabled || loading}
+        activeOpacity={0.82}
+      >
+        <LinearGradient
+          colors={['#EC4899', '#F43F5E']}
+          start={{ x: 0, y: 0 }}
+          end={{ x: 1, y: 0 }}
+          style={[styles.gradient, sizeStyle]}
+        >
+          {content}
+        </LinearGradient>
+      </TouchableOpacity>
+    );
+  }
+
+  return (
+    <TouchableOpacity
+      style={[
+        styles.button,
+        sizeStyle,
+        fullWidth && styles.fullWidth,
+        disabled && styles.disabled,
+        variant === 'outline' && styles.outline,
+      ]}
+      onPress={onPress}
+      disabled={disabled || loading}
+      activeOpacity={0.75}
+    >
+      {content}
     </TouchableOpacity>
   );
 };
 
 const styles = StyleSheet.create({
+  wrapper: {
+    borderRadius: theme.borderRadius.lg,
+    overflow: 'hidden',
+    shadowColor: '#7C3AED',
+    shadowOffset: { width: 0, height: 6 },
+    shadowOpacity: 0.45,
+    shadowRadius: 14,
+    elevation: 8,
+  },
+  gradient: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'center',
+  },
   button: {
     flexDirection: 'row',
     alignItems: 'center',
     justifyContent: 'center',
-    borderRadius: theme.borderRadius.md,
-    ...theme.shadows.sm,
+    borderRadius: theme.borderRadius.lg,
   },
   small: {
     paddingHorizontal: theme.spacing.md,
@@ -99,31 +146,23 @@ const styles = StyleSheet.create({
   },
   large: {
     paddingHorizontal: theme.spacing.xl,
-    paddingVertical: theme.spacing.lg,
-  },
-  primary: {
-    backgroundColor: theme.colors.primary,
-  },
-  secondary: {
-    backgroundColor: theme.colors.secondary,
+    paddingVertical: theme.spacing.md + 4,
   },
   outline: {
     backgroundColor: 'transparent',
-    borderWidth: 2,
-    borderColor: theme.colors.primary,
-  },
-  ghost: {
-    backgroundColor: 'transparent',
+    borderWidth: 1.5,
+    borderColor: theme.colors.primaryGlow,
   },
   disabled: {
-    opacity: 0.5,
+    opacity: 0.45,
   },
   fullWidth: {
     width: '100%',
   },
   text: {
-    fontWeight: '600',
-    color: theme.colors.text,
+    fontWeight: '700',
+    color: '#fff',
+    letterSpacing: 0.2,
   },
   smallText: {
     fontSize: theme.fontSize.sm,
@@ -133,9 +172,10 @@ const styles = StyleSheet.create({
   },
   largeText: {
     fontSize: theme.fontSize.lg,
+    letterSpacing: 0.3,
   },
   outlineText: {
-    color: theme.colors.primary,
+    color: theme.colors.primaryGlow,
   },
   icon: {
     marginRight: theme.spacing.sm,

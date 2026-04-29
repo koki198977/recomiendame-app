@@ -1,5 +1,8 @@
-import React, { useEffect, useState } from 'react';
-import { View, ActivityIndicator, Text, TouchableOpacity, StyleSheet, Linking } from 'react-native';
+import React, { useEffect, useState, useRef } from 'react';
+import { View, ActivityIndicator, Text, TouchableOpacity, StyleSheet, Linking, Animated, Platform } from 'react-native';
+import { LinearGradient } from 'expo-linear-gradient';
+import { Ionicons } from '@expo/vector-icons';
+import { theme } from './src/styles/theme';
 import AsyncStorage from '@react-native-async-storage/async-storage';
 import axios from 'axios';
 import Toast from 'react-native-toast-message';
@@ -48,6 +51,95 @@ type SharedWishListParams = {
 };
 type Tab = 'home' | 'recommendations' | 'seen' | 'favorites' | 'wishlist' | 'profile';
 
+type TabConfig = {
+  key: Tab;
+  label: string;
+  icon: string;
+  iconActive: string;
+  activeColor: string;
+  glowColor: string;
+};
+
+const TAB_CONFIG: TabConfig[] = [
+  { key: 'home', label: 'Inicio', icon: 'home-outline', iconActive: 'home', activeColor: '#7C3AED', glowColor: '#A855F7' },
+  { key: 'recommendations', label: 'Descubrir', icon: 'sparkles-outline', iconActive: 'sparkles', activeColor: '#6366F1', glowColor: '#818CF8' },
+  { key: 'seen', label: 'Vistos', icon: 'eye-outline', iconActive: 'eye', activeColor: '#7C3AED', glowColor: '#A855F7' },
+  { key: 'favorites', label: 'Favoritos', icon: 'star-outline', iconActive: 'star', activeColor: '#F59E0B', glowColor: '#FCD34D' },
+  { key: 'wishlist', label: 'Deseados', icon: 'heart-outline', iconActive: 'heart', activeColor: '#EC4899', glowColor: '#F472B6' },
+  { key: 'profile', label: 'Perfil', icon: 'person-outline', iconActive: 'person', activeColor: '#7C3AED', glowColor: '#A855F7' },
+];
+
+function TabItem({ config, active, onPress }: { config: TabConfig; active: boolean; onPress: () => void }) {
+  const scaleAnim = useRef(new Animated.Value(1)).current;
+
+  const handlePress = () => {
+    Animated.sequence([
+      Animated.timing(scaleAnim, { toValue: 0.85, duration: 80, useNativeDriver: true }),
+      Animated.spring(scaleAnim, { toValue: 1, useNativeDriver: true, tension: 300, friction: 10 }),
+    ]).start();
+    onPress();
+  };
+
+  return (
+    <TouchableOpacity style={tabItemStyles.tab} onPress={handlePress} activeOpacity={1}>
+      <Animated.View style={{ transform: [{ scale: scaleAnim }], alignItems: 'center' }}>
+        {active ? (
+          <LinearGradient
+            colors={[config.activeColor, config.glowColor]}
+            style={tabItemStyles.activeIconContainer}
+            start={{ x: 0, y: 1 }}
+            end={{ x: 1, y: 0 }}
+          >
+            <Ionicons name={config.iconActive as any} size={20} color="#fff" />
+          </LinearGradient>
+        ) : (
+          <View style={tabItemStyles.iconContainer}>
+            <Ionicons name={config.icon as any} size={20} color="#4A4A6A" />
+          </View>
+        )}
+        <Text style={[tabItemStyles.label, active && { color: config.glowColor }]}>
+          {config.label}
+        </Text>
+      </Animated.View>
+    </TouchableOpacity>
+  );
+}
+
+const tabItemStyles = StyleSheet.create({
+  tab: {
+    flex: 1,
+    alignItems: 'center',
+    paddingVertical: 6,
+  },
+  iconContainer: {
+    width: 40,
+    height: 40,
+    borderRadius: 20,
+    alignItems: 'center',
+    justifyContent: 'center',
+    marginBottom: 2,
+  },
+  activeIconContainer: {
+    width: 40,
+    height: 40,
+    borderRadius: 20,
+    alignItems: 'center',
+    justifyContent: 'center',
+    marginBottom: 2,
+    shadowColor: '#A855F7',
+    shadowOffset: { width: 0, height: 4 },
+    shadowOpacity: 0.7,
+    shadowRadius: 12,
+    elevation: 10,
+  },
+  label: {
+    fontSize: 9,
+    fontWeight: '600',
+    color: '#4A4A6A',
+    letterSpacing: 0.2,
+  },
+});
+
 const MainApp: React.FC<{ onLogout: () => void; onNavigate: (screen: Screen) => void }> = ({ onLogout, onNavigate }) => {
   const [activeTab, setActiveTab] = useState<Tab>('home');
 
@@ -77,48 +169,20 @@ const MainApp: React.FC<{ onLogout: () => void; onNavigate: (screen: Screen) => 
       </View>
 
       <SafeAreaView style={styles.tabBarContainer} edges={['bottom']}>
+        <LinearGradient
+          colors={['rgba(10,10,20,0)', 'rgba(10,10,20,0.98)']}
+          style={styles.tabBarBlur}
+          pointerEvents="none"
+        />
         <View style={styles.tabBar}>
-          <TouchableOpacity style={styles.tab} onPress={() => setActiveTab('home')}>
-            <View style={[styles.tabIconContainer, activeTab === 'home' && styles.activeTabIconContainer]}>
-              <Text style={[styles.tabIcon, activeTab === 'home' && styles.activeTabIcon]}>🏠</Text>
-            </View>
-            <Text style={[styles.tabText, activeTab === 'home' && styles.activeTabText]}>Inicio</Text>
-          </TouchableOpacity>
-
-          <TouchableOpacity style={styles.tab} onPress={() => setActiveTab('recommendations')}>
-            <View style={[styles.tabIconContainer, activeTab === 'recommendations' && styles.activeTabIconContainer]}>
-              <Text style={[styles.tabIcon, activeTab === 'recommendations' && styles.activeTabIcon]}>✨</Text>
-            </View>
-            <Text style={[styles.tabText, activeTab === 'recommendations' && styles.activeTabText]}>Recomienda</Text>
-          </TouchableOpacity>
-
-          <TouchableOpacity style={styles.tab} onPress={() => setActiveTab('seen')}>
-            <View style={[styles.tabIconContainer, activeTab === 'seen' && styles.activeTabIconContainer]}>
-              <Text style={[styles.tabIcon, activeTab === 'seen' && styles.activeTabIcon]}>👁️</Text>
-            </View>
-            <Text style={[styles.tabText, activeTab === 'seen' && styles.activeTabText]}>Vistos</Text>
-          </TouchableOpacity>
-
-          <TouchableOpacity style={styles.tab} onPress={() => setActiveTab('favorites')}>
-            <View style={[styles.tabIconContainer, activeTab === 'favorites' && styles.activeTabIconContainer]}>
-              <Text style={[styles.tabIcon, activeTab === 'favorites' && styles.activeTabIcon]}>⭐</Text>
-            </View>
-            <Text style={[styles.tabText, activeTab === 'favorites' && styles.activeTabText]}>Favoritos</Text>
-          </TouchableOpacity>
-
-          <TouchableOpacity style={styles.tab} onPress={() => setActiveTab('wishlist')}>
-            <View style={[styles.tabIconContainer, activeTab === 'wishlist' && styles.activeTabIconContainer]}>
-              <Text style={[styles.tabIcon, activeTab === 'wishlist' && styles.activeTabIcon]}>💖</Text>
-            </View>
-            <Text style={[styles.tabText, activeTab === 'wishlist' && styles.activeTabText]}>Deseados</Text>
-          </TouchableOpacity>
-
-          <TouchableOpacity style={styles.tab} onPress={() => setActiveTab('profile')}>
-            <View style={[styles.tabIconContainer, activeTab === 'profile' && styles.activeTabIconContainer]}>
-              <Text style={[styles.tabIcon, activeTab === 'profile' && styles.activeTabIcon]}>👤</Text>
-            </View>
-            <Text style={[styles.tabText, activeTab === 'profile' && styles.activeTabText]}>Perfil</Text>
-          </TouchableOpacity>
+          {TAB_CONFIG.map((cfg) => (
+            <TabItem
+              key={cfg.key}
+              config={cfg}
+              active={activeTab === cfg.key}
+              onPress={() => setActiveTab(cfg.key)}
+            />
+          ))}
         </View>
       </SafeAreaView>
 
@@ -302,9 +366,12 @@ export default function App() {
   if (currentScreen === 'loading') {
     return (
       <PaperProvider theme={customTheme}>
-        <View style={{ flex: 1, justifyContent: 'center', alignItems: 'center', backgroundColor: '#000' }}>
-          <ActivityIndicator color="#a855f7" size="large" />
-        </View>
+        <LinearGradient
+          colors={['#0A0A14', '#14102A', '#0A0A14']}
+          style={{ flex: 1, justifyContent: 'center', alignItems: 'center' }}
+        >
+          <ActivityIndicator color="#A855F7" size="large" />
+        </LinearGradient>
       </PaperProvider>
     );
   }
@@ -415,72 +482,36 @@ export default function App() {
 const styles = StyleSheet.create({
   container: {
     flex: 1,
-    backgroundColor: '#000',
+    backgroundColor: '#0A0A14',
   },
   content: {
     flex: 1,
   },
   tabBarContainer: {
     backgroundColor: 'transparent',
-    paddingHorizontal: 20,
-    paddingTop: 10,
+    paddingHorizontal: 16,
+    paddingBottom: 4,
+  },
+  tabBarBlur: {
+    position: 'absolute',
+    top: -24,
+    left: 0,
+    right: 0,
+    height: 28,
+    pointerEvents: 'none',
   },
   tabBar: {
     flexDirection: 'row',
-    backgroundColor: '#1A1A1A',
-    borderRadius: 28,
-    paddingVertical: 12,
-    paddingHorizontal: 8,
-    shadowColor: '#8B5CF6',
-    shadowOffset: {
-      width: 0,
-      height: 4,
-    },
-    shadowOpacity: 0.3,
-    shadowRadius: 12,
-    elevation: 12,
-    borderWidth: 1,
-    borderColor: '#27272A',
-  },
-  tab: {
-    flex: 1,
-    alignItems: 'center',
+    backgroundColor: '#12121E',
+    borderRadius: 24,
     paddingVertical: 8,
-  },
-  tabIconContainer: {
-    width: 40,
-    height: 40,
-    borderRadius: 20,
-    alignItems: 'center',
-    justifyContent: 'center',
-    marginBottom: 4,
-    backgroundColor: 'transparent',
-  },
-  activeTabIconContainer: {
-    backgroundColor: '#8B5CF6',
-    shadowColor: '#8B5CF6',
-    shadowOffset: {
-      width: 0,
-      height: 4,
-    },
-    shadowOpacity: 0.5,
-    shadowRadius: 12,
-    elevation: 8,
-  },
-  tabIcon: {
-    fontSize: 20,
-  },
-  activeTabIcon: {
-    fontSize: 22,
-  },
-  tabText: {
-    fontSize: 10,
-    color: '#71717A',
-    fontWeight: '600',
-    textAlign: 'center',
-  },
-  activeTabText: {
-    color: '#8B5CF6',
-    fontWeight: 'bold',
+    paddingHorizontal: 4,
+    shadowColor: '#7C3AED',
+    shadowOffset: { width: 0, height: -2 },
+    shadowOpacity: 0.25,
+    shadowRadius: 16,
+    elevation: 16,
+    borderWidth: 1,
+    borderColor: 'rgba(124, 58, 237, 0.18)',
   },
 });

@@ -12,6 +12,7 @@ import {
   Modal,
   Text,
 } from 'react-native';
+import { LinearGradient } from 'expo-linear-gradient';
 import AsyncStorage from '@react-native-async-storage/async-storage';
 import axios from 'axios';
 import Toast from 'react-native-toast-message';
@@ -208,63 +209,73 @@ export default function HomeScreen() {
           />
         }
         showsVerticalScrollIndicator={false}
+        contentContainerStyle={{ paddingBottom: 100 }}
       >
-        {/* Header con logo y nombre de usuario */}
-        <View style={styles.headerContainer}>
+        {/* Header premium */}
+        <LinearGradient
+          colors={['#16103A', '#0A0A14']}
+          style={styles.headerContainer}
+        >
           <Image 
             source={require('../../assets/logo.png')} 
             style={styles.logoImage} 
             resizeMode="contain" 
           />
           <View style={styles.headerTextContainer}>
-            <Text style={styles.greeting}>Hola, {userName}</Text>
+            <Text style={styles.greeting}>
+              Hola, <Text style={styles.greetingAccent}>{userName}</Text>
+            </Text>
             <Text style={styles.subtitle}>Tu resumen de entretenimiento</Text>
           </View>
-        </View>
+        </LinearGradient>
 
         {stats ? (
           <>
             {/* Chapi tip */}
             <ChapiTip message={getChapiMessage(stats)} />
 
-            {/* Stats Cards Grid */}
+            {/* Stats Grid premium */}
             <View style={styles.statsGrid}>
-              <View style={styles.statCard}>
-                <View style={[styles.statIconContainer, { backgroundColor: '#8B5CF620' }]}>
-                  <Ionicons name="eye" size={24} color={theme.colors.primary} />
+              <LinearGradient colors={['#1C1040', '#100C28']} style={styles.statCard} start={{x:0,y:0}} end={{x:1,y:1}}>
+                <View style={[styles.statIconContainer, { backgroundColor: 'rgba(124,58,237,0.2)' }]}>
+                  <Ionicons name="eye" size={22} color="#A855F7" />
                 </View>
                 <Text style={styles.statValue}>{stats.seenTotal || 0}</Text>
-                <Text style={styles.statLabel}>Vistos</Text>
-              </View>
+                <Text style={styles.statLabel}>VISTOS</Text>
+              </LinearGradient>
 
-              <View style={styles.statCard}>
-                <View style={[styles.statIconContainer, { backgroundColor: '#F59E0B20' }]}>
-                  <Ionicons name="star" size={24} color="#F59E0B" />
+              <LinearGradient colors={['#201408', '#120C04']} style={styles.statCard} start={{x:0,y:0}} end={{x:1,y:1}}>
+                <View style={[styles.statIconContainer, { backgroundColor: 'rgba(245,158,11,0.2)' }]}>
+                  <Ionicons name="star" size={22} color="#F59E0B" />
                 </View>
-                <Text style={styles.statValue}>{stats.favoriteTotal || 0}</Text>
-                <Text style={styles.statLabel}>Favoritos</Text>
-              </View>
+                <Text style={[styles.statValue, { color: '#FCD34D' }]}>{stats.favoriteTotal || 0}</Text>
+                <Text style={styles.statLabel}>FAVORITOS</Text>
+              </LinearGradient>
 
-              <View style={styles.statCard}>
-                <View style={[styles.statIconContainer, { backgroundColor: '#EC489920' }]}>
-                  <Ionicons name="heart" size={24} color={theme.colors.secondary} />
+              <LinearGradient colors={['#200C18', '#120808']} style={styles.statCard} start={{x:0,y:0}} end={{x:1,y:1}}>
+                <View style={[styles.statIconContainer, { backgroundColor: 'rgba(236,72,153,0.2)' }]}>
+                  <Ionicons name="heart" size={22} color="#EC4899" />
                 </View>
-                <Text style={styles.statValue}>{stats.wishlistTotal || 0}</Text>
-                <Text style={styles.statLabel}>Deseados</Text>
-              </View>
+                <Text style={[styles.statValue, { color: '#F472B6' }]}>{stats.wishlistTotal || 0}</Text>
+                <Text style={styles.statLabel}>DESEADOS</Text>
+              </LinearGradient>
 
-              <View style={styles.statCard}>
-                <View style={[styles.statIconContainer, { backgroundColor: '#3B82F620' }]}>
-                  <Ionicons name="film" size={24} color={theme.colors.info} />
+              <LinearGradient colors={['#0C1040', '#080C28']} style={styles.statCard} start={{x:0,y:0}} end={{x:1,y:1}}>
+                <View style={[styles.statIconContainer, { backgroundColor: 'rgba(99,102,241,0.2)' }]}>
+                  <Ionicons name="film" size={22} color="#818CF8" />
                 </View>
-                <Text style={styles.statValue}>{stats.ratingsTotal || 0}</Text>
-                <Text style={styles.statLabel}>Puntuaciones</Text>
-              </View>
+                <Text style={[styles.statValue, { color: '#A5B4FC' }]}>{stats.ratingsTotal || 0}</Text>
+                <Text style={styles.statLabel}>RATINGS</Text>
+              </LinearGradient>
             </View>
 
             {/* Rating Card */}
             {stats.averageRating != null && (
-              <View style={styles.ratingCard}>
+              <LinearGradient
+                colors={['#1A1040', '#100C28', '#0A0A18']}
+                style={styles.ratingCard}
+                start={{x:0,y:0}} end={{x:1,y:1}}
+              >
                 <View style={styles.ratingContent}>
                   <View style={{ flex: 1 }}>
                     <Text style={styles.ratingLabel}>Tu Promedio</Text>
@@ -272,35 +283,23 @@ export default function HomeScreen() {
                       Basado en {stats.ratingsTotal} puntuaciones
                     </Text>
                   </View>
-                  <View style={styles.ratingCircle}>
+                  <LinearGradient
+                    colors={['#7C3AED', '#A855F7']}
+                    style={styles.ratingCircle}
+                    start={{x:0,y:1}} end={{x:1,y:0}}
+                  >
                     <Text style={styles.ratingText}>{stats.averageRating.toFixed(1)}</Text>
-                  </View>
+                  </LinearGradient>
                 </View>
-              </View>
+              </LinearGradient>
             )}
 
-            {/* Géneros favoritos */}
-            {stats.favoriteGenres?.length > 0 && (
-              <View style={styles.section}>
-                <Text style={styles.sectionTitle}>🎭 Tus Géneros</Text>
-                <ScrollView 
-                  horizontal 
-                  showsHorizontalScrollIndicator={false}
-                  contentContainerStyle={styles.genresContainer}
-                >
-                  {stats.favoriteGenres.map((genre: string) => (
-                    <View key={genre} style={styles.genreChip}>
-                      <Text style={styles.genreText}>{genre}</Text>
-                    </View>
-                  ))}
-                </ScrollView>
-              </View>
-            )}
+
 
             {/* Recomendaciones recientes */}
             {stats.recentRecommendations?.length > 0 && (
               <View style={styles.section}>
-                <Text style={styles.sectionTitle}>✨ Recomendaciones Recientes</Text>
+                <Text style={styles.sectionTitle}>✨ Recomendaciones</Text>
                 <FlatList
                   horizontal={true}
                   data={stats.recentRecommendations}
@@ -310,27 +309,31 @@ export default function HomeScreen() {
                   renderItem={({ item }: { item: Recommendation }) => (
                     <TouchableOpacity 
                       style={styles.movieCard} 
-                      activeOpacity={0.8}
+                      activeOpacity={0.75}
                       onPress={() => setSelectedItem(item)}
                     >
-                      {item.mediaType && (
-                        <View style={styles.badge}>
-                          <Text style={styles.badgeText}>
-                            {item.mediaType === 'movie' ? 'PELÍCULA' : 'SERIE'}
-                          </Text>
-                        </View>
-                      )}
-                      {item.voteAverage != null && item.voteAverage > 0 && (
-                        <View style={styles.ratingBadge}>
-                          <Ionicons name="star" size={12} color="#F59E0B" />
-                          <Text style={styles.ratingBadgeText}>{item.voteAverage.toFixed(1)}</Text>
-                        </View>
-                      )}
                       <Image
                         source={{ uri: item.posterUrl }}
                         style={styles.moviePoster}
                         resizeMode="cover"
                       />
+                      <LinearGradient
+                        colors={['transparent', 'rgba(10,10,20,0.95)']}
+                        style={styles.movieCardOverlay}
+                      />
+                      {item.mediaType && (
+                        <View style={styles.badge}>
+                          <Text style={styles.badgeText}>
+                            {item.mediaType === 'movie' ? 'PELI' : 'SERIE'}
+                          </Text>
+                        </View>
+                      )}
+                      {item.voteAverage != null && item.voteAverage > 0 && (
+                        <View style={styles.ratingBadge}>
+                          <Ionicons name="star" size={10} color="#F59E0B" />
+                          <Text style={styles.ratingBadgeText}>{item.voteAverage.toFixed(1)}</Text>
+                        </View>
+                      )}
                     </TouchableOpacity>
                   )}
                 />
@@ -503,74 +506,88 @@ const styles = StyleSheet.create({
     alignItems: 'center',
     gap: theme.spacing.md,
     paddingHorizontal: theme.spacing.lg,
-    paddingTop: theme.spacing.xl,
+    paddingTop: theme.spacing.xl + 8,
     paddingBottom: theme.spacing.lg,
-    backgroundColor: theme.colors.background,
   },
   logoImage: {
-    width: 48,
-    height: 48,
+    width: 52,
+    height: 52,
+    borderRadius: 16,
+    overflow: 'hidden',
   },
   headerTextContainer: {
     flex: 1,
   },
   greeting: {
     fontSize: 22,
-    fontWeight: 'bold',
+    fontWeight: '800',
     color: theme.colors.text,
     marginBottom: 2,
+    letterSpacing: -0.3,
+  },
+  greetingAccent: {
+    color: '#C084FC',
   },
   subtitle: {
     fontSize: theme.fontSize.sm,
     color: theme.colors.textSecondary,
+    letterSpacing: 0.1,
   },
   statsGrid: {
     flexDirection: 'row',
     flexWrap: 'wrap',
     paddingHorizontal: theme.spacing.md,
-    paddingTop: theme.spacing.xs,
-    gap: theme.spacing.sm,
+    paddingTop: theme.spacing.sm,
+    gap: 10,
   },
   statCard: {
-    width: (width - theme.spacing.md * 2 - theme.spacing.sm) / 2,
-    backgroundColor: theme.colors.surface,
-    borderRadius: theme.borderRadius.lg,
+    width: (width - theme.spacing.md * 2 - 10) / 2,
+    borderRadius: theme.borderRadius.xl,
     padding: theme.spacing.lg,
     alignItems: 'center',
     borderWidth: 1,
-    borderColor: 'rgba(139, 92, 246, 0.1)',
-    ...theme.shadows.sm,
+    borderColor: 'rgba(255,255,255,0.06)',
+    shadowColor: '#000',
+    shadowOffset: { width: 0, height: 4 },
+    shadowOpacity: 0.4,
+    shadowRadius: 10,
+    elevation: 6,
   },
   statIconContainer: {
-    width: 52,
-    height: 52,
-    borderRadius: theme.borderRadius.full,
+    width: 48,
+    height: 48,
+    borderRadius: 24,
     justifyContent: 'center',
     alignItems: 'center',
-    marginBottom: theme.spacing.md,
+    marginBottom: 10,
   },
   statValue: {
-    fontSize: 28,
-    fontWeight: 'bold',
-    color: theme.colors.text,
-    marginBottom: 4,
+    fontSize: 32,
+    fontWeight: '800',
+    color: '#E8E0FF',
+    marginBottom: 3,
+    letterSpacing: -0.5,
   },
   statLabel: {
-    fontSize: theme.fontSize.xs,
+    fontSize: 10,
     color: theme.colors.textSecondary,
     textTransform: 'uppercase',
-    letterSpacing: 0.5,
+    letterSpacing: 1.2,
+    fontWeight: '700',
   },
   ratingCard: {
     marginHorizontal: theme.spacing.md,
     marginTop: theme.spacing.md,
     marginBottom: theme.spacing.lg,
-    backgroundColor: theme.colors.surface,
-    borderRadius: theme.borderRadius.lg,
+    borderRadius: theme.borderRadius.xl,
     padding: theme.spacing.xl,
     borderWidth: 1,
-    borderColor: 'rgba(139, 92, 246, 0.2)',
-    ...theme.shadows.md,
+    borderColor: 'rgba(168,85,247,0.25)',
+    shadowColor: '#7C3AED',
+    shadowOffset: { width: 0, height: 6 },
+    shadowOpacity: 0.3,
+    shadowRadius: 14,
+    elevation: 8,
   },
   ratingContent: {
     flexDirection: 'row',
@@ -578,110 +595,129 @@ const styles = StyleSheet.create({
     alignItems: 'center',
   },
   ratingLabel: {
-    fontSize: theme.fontSize.md,
-    fontWeight: '600',
+    fontSize: theme.fontSize.lg,
+    fontWeight: '700',
     color: theme.colors.text,
     marginBottom: 4,
   },
   ratingDescription: {
     fontSize: theme.fontSize.xs,
     color: theme.colors.textSecondary,
+    letterSpacing: 0.2,
   },
   ratingCircle: {
     marginLeft: theme.spacing.md,
-    width: 70,
-    height: 70,
-    borderRadius: 35,
-    borderWidth: 4,
-    borderColor: theme.colors.primary,
+    width: 76,
+    height: 76,
+    borderRadius: 38,
     alignItems: 'center',
     justifyContent: 'center',
-    backgroundColor: 'rgba(139, 92, 246, 0.1)',
+    shadowColor: '#A855F7',
+    shadowOffset: { width: 0, height: 0 },
+    shadowOpacity: 0.7,
+    shadowRadius: 16,
+    elevation: 10,
   },
   ratingText: {
-    fontSize: theme.fontSize.md,
-    fontWeight: 'bold',
-    color: theme.colors.text,
+    fontSize: 22,
+    fontWeight: '800',
+    color: '#fff',
+    letterSpacing: -0.5,
   },
   section: {
     marginBottom: theme.spacing.xl,
   },
   sectionTitle: {
-    fontSize: theme.fontSize.xl,
-    fontWeight: 'bold',
+    fontSize: theme.fontSize.lg,
+    fontWeight: '800',
     color: theme.colors.text,
     marginHorizontal: theme.spacing.md,
     marginBottom: theme.spacing.md,
+    letterSpacing: -0.2,
   },
   genresContainer: {
     paddingHorizontal: theme.spacing.md,
     gap: theme.spacing.sm,
+    flexDirection: 'row',
   },
   genreChip: {
-    backgroundColor: 'rgba(139, 92, 246, 0.15)',
     paddingHorizontal: theme.spacing.lg,
-    paddingVertical: theme.spacing.sm + 2,
+    paddingVertical: theme.spacing.sm,
     borderRadius: theme.borderRadius.full,
     marginRight: theme.spacing.sm,
     borderWidth: 1,
-    borderColor: 'rgba(139, 92, 246, 0.3)',
+    borderColor: 'rgba(168, 85, 247, 0.35)',
   },
   genreText: {
-    color: theme.colors.primary,
+    color: '#C084FC',
     fontSize: theme.fontSize.sm,
-    fontWeight: '600',
+    fontWeight: '700',
+    letterSpacing: 0.3,
   },
   recommendationsContainer: {
     paddingHorizontal: theme.spacing.md,
   },
   movieCard: {
     width: 140,
-    marginRight: theme.spacing.md,
+    height: 210,
+    marginRight: 12,
     borderRadius: theme.borderRadius.lg,
     overflow: 'hidden',
     backgroundColor: theme.colors.surface,
     borderWidth: 1,
-    borderColor: 'rgba(139, 92, 246, 0.1)',
-    ...theme.shadows.md,
+    borderColor: 'rgba(168, 85, 247, 0.15)',
+    shadowColor: '#7C3AED',
+    shadowOffset: { width: 0, height: 6 },
+    shadowOpacity: 0.35,
+    shadowRadius: 12,
+    elevation: 8,
     position: 'relative',
+  },
+  movieCardOverlay: {
+    position: 'absolute',
+    bottom: 0,
+    left: 0,
+    right: 0,
+    height: 80,
+    zIndex: 2,
   },
   badge: {
     position: 'absolute',
-    top: theme.spacing.sm,
-    left: theme.spacing.sm,
-    backgroundColor: 'rgba(0, 0, 0, 0.8)',
-    paddingHorizontal: theme.spacing.sm,
-    paddingVertical: 4,
-    borderRadius: 4,
+    top: 8,
+    left: 8,
+    backgroundColor: 'rgba(124, 58, 237, 0.85)',
+    paddingHorizontal: 7,
+    paddingVertical: 3,
+    borderRadius: 6,
     zIndex: 10,
   },
   badgeText: {
-    fontSize: 9,
-    fontWeight: 'bold',
-    color: theme.colors.text,
-    letterSpacing: 0.5,
+    fontSize: 8,
+    fontWeight: '800',
+    color: '#fff',
+    letterSpacing: 0.8,
   },
   ratingBadge: {
     position: 'absolute',
-    top: theme.spacing.sm,
-    right: theme.spacing.sm,
-    backgroundColor: 'rgba(0, 0, 0, 0.8)',
-    paddingHorizontal: theme.spacing.sm,
-    paddingVertical: 4,
-    borderRadius: 4,
+    top: 8,
+    right: 8,
+    backgroundColor: 'rgba(0,0,0,0.75)',
+    paddingHorizontal: 6,
+    paddingVertical: 3,
+    borderRadius: 6,
     zIndex: 10,
     flexDirection: 'row',
     alignItems: 'center',
-    gap: 4,
+    gap: 3,
   },
   ratingBadgeText: {
-    fontSize: 11,
-    fontWeight: 'bold',
-    color: theme.colors.text,
+    fontSize: 10,
+    fontWeight: '800',
+    color: '#FCD34D',
   },
   moviePoster: {
     width: '100%',
-    height: 210,
+    height: '100%',
     backgroundColor: theme.colors.surfaceLight,
   },
   emptyState: {
@@ -729,7 +765,8 @@ const styles = StyleSheet.create({
   modalPoster: {
     width: 120,
     height: 180,
-    borderRadius: theme.borderRadius.md,
+    borderRadius: 16,
+    overflow: 'hidden',
     backgroundColor: theme.colors.surfaceLight,
   },
   posterPlaceholder: {

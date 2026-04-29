@@ -20,7 +20,7 @@ export default {
     },
     android: {
       package: "cl.edicloud.recomiendame",
-      versionCode: 4,
+      versionCode: 10,
       permissions: ["android.permission.INTERNET"],
       adaptiveIcon: {
         foregroundImage: "./assets/adaptive-icon.png",

@@ -10,6 +10,7 @@ import {
   TouchableOpacity,
   TextInput as RNTextInput,
 } from 'react-native';
+import { LinearGradient } from 'expo-linear-gradient';
 import { Text } from 'react-native-paper';
 import AsyncStorage from '@react-native-async-storage/async-storage';
 import axios from 'axios';
@@ -24,6 +25,8 @@ export default function LoginScreen({ navigation, onContinueAsGuest }: any) {
   const [password, setPassword] = useState('');
   const [loading, setLoading] = useState(false);
   const [showPassword, setShowPassword] = useState(false);
+  const [emailFocused, setEmailFocused] = useState(false);
+  const [passwordFocused, setPasswordFocused] = useState(false);
 
   const handleLogin = async () => {
     Keyboard.dismiss();
@@ -58,6 +61,12 @@ export default function LoginScreen({ navigation, onContinueAsGuest }: any) {
       style={styles.container}
       behavior={Platform.OS === 'ios' ? 'padding' : 'height'}
     >
+      <LinearGradient
+        colors={['#0A0A14', '#16083A', '#0A0A14']}
+        style={StyleSheet.absoluteFill}
+        start={{ x: 0.5, y: 0 }}
+        end={{ x: 0.5, y: 1 }}
+      />
       <ScrollView
         contentContainerStyle={styles.scrollContent}
         keyboardShouldPersistTaps="handled"
@@ -65,14 +74,16 @@ export default function LoginScreen({ navigation, onContinueAsGuest }: any) {
       >
         {/* Logo y título */}
         <View style={styles.header}>
-          <Image
-            source={require('../../assets/logo.png')}
-            style={styles.logo}
-            resizeMode="contain"
-          />
-          <Text style={styles.title}>Iniciar sesión</Text>
+          <View style={styles.logoWrapper}>
+            <Image
+              source={require('../../assets/logo.png')}
+              style={styles.logo}
+              resizeMode="contain"
+            />
+          </View>
+          <Text style={styles.title}>Bienvenido de nuevo</Text>
           <Text style={styles.subtitle}>
-            Accede a Recomiéndame y sincroniza tus recomendaciones en todos tus dispositivos.
+            Accede y sincroniza tus recomendaciones en todos tus dispositivos.
           </Text>
         </View>
 
@@ -81,16 +92,21 @@ export default function LoginScreen({ navigation, onContinueAsGuest }: any) {
           {/* Email Input */}
           <View style={styles.inputContainer}>
             <Text style={styles.label}>Correo electrónico</Text>
-            <RNTextInput
-              style={styles.input}
-              value={email}
-              onChangeText={setEmail}
-              placeholder="tucorreo@email.com"
-              placeholderTextColor={theme.colors.textTertiary}
-              keyboardType="email-address"
-              autoCapitalize="none"
-              autoCorrect={false}
-            />
+            <View style={[styles.inputWrapper, emailFocused && styles.inputWrapperFocused]}>
+              <Ionicons name="mail-outline" size={18} color={emailFocused ? '#A855F7' : theme.colors.textTertiary} style={styles.inputIcon} />
+              <RNTextInput
+                style={styles.input}
+                value={email}
+                onChangeText={setEmail}
+                placeholder="tucorreo@email.com"
+                placeholderTextColor={theme.colors.textTertiary}
+                keyboardType="email-address"
+                autoCapitalize="none"
+                autoCorrect={false}
+                onFocus={() => setEmailFocused(true)}
+                onBlur={() => setEmailFocused(false)}
+              />
+            </View>
           </View>
 
           {/* Password Input */}
@@ -103,15 +119,18 @@ export default function LoginScreen({ navigation, onContinueAsGuest }: any) {
                 </Text>
               </TouchableOpacity>
             </View>
-            <View style={styles.passwordContainer}>
+            <View style={[styles.inputWrapper, passwordFocused && styles.inputWrapperFocused]}>
+              <Ionicons name="lock-closed-outline" size={18} color={passwordFocused ? '#A855F7' : theme.colors.textTertiary} style={styles.inputIcon} />
               <RNTextInput
-                style={[styles.input, styles.passwordInput]}
+                style={styles.input}
                 value={password}
                 onChangeText={setPassword}
                 placeholder="••••••••"
                 placeholderTextColor={theme.colors.textTertiary}
                 secureTextEntry={!showPassword}
                 autoCapitalize="none"
+                onFocus={() => setPasswordFocused(true)}
+                onBlur={() => setPasswordFocused(false)}
               />
             </View>
           </View>
@@ -139,7 +158,7 @@ export default function LoginScreen({ navigation, onContinueAsGuest }: any) {
             style={styles.register}
             onPress={() => navigation.navigate('Register')}
           >
-            <Text style={styles.registerText}>¿Aún no tienes cuenta? Regístrate</Text>
+            <Text style={styles.registerText}>¿Aún no tienes cuenta? <Text style={{ color: '#C084FC', fontWeight: '700' }}>Regístrate</Text></Text>
           </TouchableOpacity>
 
           {onContinueAsGuest && (
@@ -172,16 +191,31 @@ const styles = StyleSheet.create({
     alignItems: 'center',
     marginBottom: theme.spacing.xl,
   },
-  logo: {
-    width: 100,
-    height: 100,
+  logoWrapper: {
+    width: 90,
+    height: 90,
+    borderRadius: 20,
+    alignItems: 'center',
+    justifyContent: 'center',
     marginBottom: theme.spacing.lg,
+    shadowColor: '#A855F7',
+    shadowOffset: { width: 0, height: 0 },
+    shadowOpacity: 0.7,
+    shadowRadius: 20,
+    elevation: 14,
+    overflow: 'hidden',
+  },
+  logo: {
+    width: 90,
+    height: 90,
+    borderRadius: 20,
   },
   title: {
     fontSize: 28,
-    fontWeight: 'bold',
+    fontWeight: '800',
     color: theme.colors.text,
     marginBottom: theme.spacing.sm,
+    letterSpacing: -0.5,
   },
   subtitle: {
     fontSize: theme.fontSize.sm,
@@ -191,21 +225,26 @@ const styles = StyleSheet.create({
     paddingHorizontal: theme.spacing.md,
   },
   card: {
-    backgroundColor: theme.colors.surface,
-    borderRadius: theme.borderRadius.xl,
+    backgroundColor: 'rgba(20,20,35,0.85)',
+    borderRadius: theme.borderRadius.xxl,
     padding: theme.spacing.xl,
     borderWidth: 1,
-    borderColor: 'rgba(139, 92, 246, 0.1)',
-    ...theme.shadows.lg,
+    borderColor: 'rgba(168, 85, 247, 0.15)',
+    shadowColor: '#7C3AED',
+    shadowOffset: { width: 0, height: 8 },
+    shadowOpacity: 0.25,
+    shadowRadius: 20,
+    elevation: 10,
   },
   inputContainer: {
     marginBottom: theme.spacing.lg,
   },
   label: {
     fontSize: theme.fontSize.sm,
-    color: theme.colors.text,
+    color: theme.colors.textSecondary,
     marginBottom: theme.spacing.sm,
-    fontWeight: '500',
+    fontWeight: '600',
+    letterSpacing: 0.2,
   },
   labelRow: {
     flexDirection: 'row',
@@ -213,25 +252,37 @@ const styles = StyleSheet.create({
     alignItems: 'center',
     marginBottom: theme.spacing.sm,
   },
-  showPassword: {
-    fontSize: theme.fontSize.sm,
-    color: theme.colors.primary,
-    fontWeight: '500',
+  inputWrapper: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    backgroundColor: 'rgba(255,255,255,0.05)',
+    borderRadius: theme.borderRadius.md,
+    borderWidth: 1,
+    borderColor: 'rgba(255,255,255,0.08)',
+    paddingHorizontal: theme.spacing.md,
+  },
+  inputWrapperFocused: {
+    borderColor: '#A855F7',
+    backgroundColor: 'rgba(168,85,247,0.06)',
+    shadowColor: '#A855F7',
+    shadowOffset: { width: 0, height: 0 },
+    shadowOpacity: 0.3,
+    shadowRadius: 8,
+    elevation: 4,
+  },
+  inputIcon: {
+    marginRight: 10,
   },
   input: {
-    backgroundColor: theme.colors.surfaceLight,
-    borderRadius: theme.borderRadius.md,
-    padding: theme.spacing.md,
+    flex: 1,
+    paddingVertical: theme.spacing.md,
     fontSize: theme.fontSize.md,
     color: theme.colors.text,
-    borderWidth: 1,
-    borderColor: theme.colors.border,
   },
-  passwordContainer: {
-    position: 'relative',
-  },
-  passwordInput: {
-    paddingRight: theme.spacing.xxl,
+  showPassword: {
+    fontSize: theme.fontSize.sm,
+    color: '#A855F7',
+    fontWeight: '600',
   },
   forgotPassword: {
     marginTop: theme.spacing.lg,
@@ -247,8 +298,7 @@ const styles = StyleSheet.create({
   },
   registerText: {
     fontSize: theme.fontSize.sm,
-    color: theme.colors.primary,
-    fontWeight: '500',
+    color: theme.colors.textSecondary,
   },
   guestButton: {
     marginTop: theme.spacing.lg,
@@ -259,7 +309,7 @@ const styles = StyleSheet.create({
   },
   guestText: {
     fontSize: theme.fontSize.sm,
-    color: theme.colors.textSecondary,
+    color: theme.colors.textTertiary,
     fontWeight: '400',
   },
 });
